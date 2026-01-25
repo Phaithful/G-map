@@ -1,0 +1,235 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@layer base {
+  :root {
+    --background: 0 0% 98%;
+    --foreground: 220 20% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 10%;
+
+    --primary: 142 72% 42%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 142 40% 95%;
+    --secondary-foreground: 142 72% 30%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 10% 46%;
+
+    --accent: 45 93% 58%;
+    --accent-foreground: 45 93% 20%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 142 72% 42%;
+
+    --radius: 1rem;
+
+    /* Custom tokens */
+    --map-overlay: 0 0% 0% / 0.03;
+    --sheet-handle: 220 10% 80%;
+    --success: 142 72% 42%;
+    --warning: 45 93% 58%;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.08), 0 2px 4px -2px hsl(0 0% 0% / 0.05);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.08), 0 4px 6px -4px hsl(0 0% 0% / 0.05);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.1), 0 8px 10px -6px hsl(0 0% 0% / 0.05);
+    --shadow-sheet: 0 -4px 20px hsl(0 0% 0% / 0.1);
+  }
+
+  .dark {
+    --background: 220 20% 8%;
+    --foreground: 0 0% 98%;
+
+    --card: 220 20% 12%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 220 20% 12%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 142 72% 48%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 142 30% 15%;
+    --secondary-foreground: 142 72% 70%;
+
+    --muted: 220 20% 18%;
+    --muted-foreground: 220 10% 60%;
+
+    --accent: 45 93% 58%;
+    --accent-foreground: 45 93% 10%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 142 72% 48%;
+
+    --sheet-handle: 220 10% 40%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+@layer components {
+  .search-pill {
+    @apply bg-card rounded-full shadow-lg px-4 py-3 flex items-center gap-3 border border-border/50;
+  }
+
+  .bottom-sheet {
+    @apply bg-card rounded-t-3xl shadow-[var(--shadow-sheet)] transition-transform duration-300 ease-out;
+  }
+
+  .sheet-handle {
+    @apply w-10 h-1 rounded-full bg-[hsl(var(--sheet-handle))] mx-auto my-3;
+  }
+
+  .category-chip {
+    @apply flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-secondary hover:bg-primary/10 transition-all duration-200 cursor-pointer;
+  }
+
+  .category-chip-active {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  .location-card {
+    @apply bg-card rounded-2xl p-4 shadow-md hover:shadow-lg transition-all duration-200 flex gap-4 cursor-pointer border border-border/30;
+  }
+
+  .map-pin {
+    @apply w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg animate-bounce-subtle;
+  }
+
+  .floating-button {
+    @apply w-12 h-12 rounded-full bg-card shadow-lg flex items-center justify-center text-foreground hover:bg-muted transition-colors;
+  }
+
+  .nav-pill {
+    @apply px-6 py-3 rounded-full bg-card shadow-lg flex items-center gap-3 text-sm font-medium;
+  }
+
+  .cta-button {
+    @apply w-full py-4 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-md hover:shadow-lg hover:bg-primary/90 transition-all duration-200 active:scale-[0.98];
+  }
+
+  .icon-button {
+    @apply w-12 h-12 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center hover:bg-primary/10 transition-colors;
+  }
+
+  .menu-item {
+    @apply flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-muted transition-colors cursor-pointer;
+  }
+
+  .badge {
+    @apply px-3 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground;
+  }
+
+  .shimmer {
+    @apply animate-pulse bg-muted rounded-lg;
+  }
+}
+
+@layer utilities {
+  .animate-bounce-subtle {
+    animation: bounce-subtle 2s ease-in-out infinite;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out;
+  }
+
+  .animate-slide-down {
+    animation: slide-down 0.3s ease-out;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.2s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.2s ease-out;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@keyframes bounce-subtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-down {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
