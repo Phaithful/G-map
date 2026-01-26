@@ -49,8 +49,8 @@ Follow the steps below to run G-Map locally on your machine.
 
 ### 1️⃣ Clone the Repository
 ```bash
-git clone https://github.com/your-username/g-map.git
-cd g-map
+git clone https://github.com/Phaithful/G-map.git
+cd G-Map
 npm install
 npm run dev
 ```
