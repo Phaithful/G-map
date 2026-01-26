@@ -1,6 +1,8 @@
 import { ArrowLeft, Navigation, Heart, Share2, Clock, MapPin, AlertCircle, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Location } from "./LocationCard";
+import OptimizedImage from "../ui/OptimizedImage";
+import { locationImages, categoryFallbacks } from "../../data/locationImages";
 
 interface LocationDetailsProps {
   location: Location | null;
@@ -12,17 +14,7 @@ interface LocationDetailsProps {
   isSaved?: boolean;
 }
 
-// Placeholder images for different categories
-const categoryImages: Record<string, string> = {
-  library: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&h=400&fit=crop",
-  lecture: "https://images.unsplash.com/photo-1562774053-701939374585?w=800&h=400&fit=crop",
-  cafeteria: "https://images.unsplash.com/photo-1567521464027-f127ff144326?w=800&h=400&fit=crop",
-  hostel: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&h=400&fit=crop",
-  office: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=400&fit=crop",
-  sports: "https://images.unsplash.com/photo-1461896836934- voices08a289a?w=800&h=400&fit=crop",
-  parking: "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=800&h=400&fit=crop",
-  shop: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=400&fit=crop",
-};
+// Image handling is now done through OptimizedImage component and locationImages data
 
 const LocationDetails = ({ 
   location, 
@@ -35,7 +27,12 @@ const LocationDetails = ({
 }: LocationDetailsProps) => {
   if (!location) return null;
 
-  const imageUrl = categoryImages[location.category] || categoryImages.office;
+  // Get image URL - specific location image or category fallback
+  const getImageUrl = () => {
+    return locationImages[location.id] || categoryFallbacks[location.category] || "/images/default-location.jpg";
+  };
+
+  const imageUrl = getImageUrl();
 
   return (
     <AnimatePresence>
@@ -49,10 +46,12 @@ const LocationDetails = ({
         >
           {/* Image header */}
           <div className="relative h-48 overflow-hidden">
-            <img 
-              src={imageUrl} 
+            <OptimizedImage
+              src={imageUrl}
               alt={location.name}
               className="w-full h-full object-cover"
+              category={location.category}
+              priority={true}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
             <button

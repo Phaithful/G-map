@@ -1,17 +1,17 @@
-import { 
-  Menu, 
-  X, 
-  User, 
-  Heart, 
-  Settings, 
-  HelpCircle, 
-  Info, 
+import {
+  Menu,
+  X,
+  User,
+  Heart,
+  Settings,
+  HelpCircle,
+  Info,
   LogOut,
   ChevronRight,
-  Share2
+  Share2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface HamburgerMenuProps {
   onNavigate?: (page: string) => void;
@@ -19,11 +19,45 @@ interface HamburgerMenuProps {
 
 const HamburgerMenu = ({ onNavigate }: HamburgerMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [userName, setUserName] = useState("Guest User");
+  const [profileImage, setProfileImage] = useState("/images/profile_icon.png");
+
+  // Load user data on mount
+  useEffect(() => {
+    const loadUserData = () => {
+      const savedName = localStorage.getItem("userName");
+      const savedImage = localStorage.getItem("profileImage");
+
+      if (savedName && savedName.trim() !== "") {
+        setUserName(savedName);
+      } else {
+        setUserName("Guest User");
+      }
+      if (savedImage && savedImage.trim() !== "") {
+        setProfileImage(savedImage);
+      } else {
+        setProfileImage("/images/profile_icon.png");
+      }
+    };
+
+    loadUserData();
+
+    // Listen for custom event when user data changes
+    const handleUserDataChanged = () => {
+      loadUserData();
+    };
+
+    window.addEventListener("userDataChanged", handleUserDataChanged);
+
+    return () => {
+      window.removeEventListener("userDataChanged", handleUserDataChanged);
+    };
+  }, []);
 
   const menuItems = [
     { id: "profile", label: "Profile", icon: User },
     { id: "saved", label: "Saved Locations", icon: Heart },
-    { id: "share", label: "Share Location", icon: Share2, highlight: true },
+    { id: "share", label: "Share Location", icon: Share2 },
     { id: "settings", label: "Settings", icon: Settings },
     { id: "help", label: "Help & Support", icon: HelpCircle },
     { id: "about", label: "About G-Map", icon: Info },
@@ -40,7 +74,7 @@ const HamburgerMenu = ({ onNavigate }: HamburgerMenuProps) => {
       <button
         onClick={() => setIsOpen(true)}
         className="fixed top-4 right-4 z-40 floating-button"
-        style={{ top: 'calc(1rem + 56px)' }}
+        style={{ top: "calc(1rem + 56px)" }}
       >
         <Menu className="w-5 h-5" />
       </button>
@@ -79,12 +113,18 @@ const HamburgerMenu = ({ onNavigate }: HamburgerMenuProps) => {
               {/* User card */}
               <div className="p-4 border-b border-border">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-xl font-bold">
-                    G
+                  <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-primary/20">
+                    <img
+                      src={profileImage}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Guest User</h3>
-                    <p className="text-sm text-muted-foreground">Campus Explorer</p>
+                    <h3 className="font-semibold">{userName}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Campus Explorer
+                    </p>
                   </div>
                 </div>
               </div>
@@ -98,10 +138,16 @@ const HamburgerMenu = ({ onNavigate }: HamburgerMenuProps) => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
                     onClick={() => handleItemClick(item.id)}
-                    className={`menu-item w-full ${item.highlight ? 'bg-primary/10' : ''}`}
+                    className={`menu-item w-full ${item.highlight ? "bg-primary/10" : ""}`}
                   >
-                    <item.icon className={`w-5 h-5 ${item.highlight ? 'text-primary' : 'text-muted-foreground'}`} />
-                    <span className={`flex-1 text-left ${item.highlight ? 'text-primary font-semibold' : ''}`}>{item.label}</span>
+                    <item.icon
+                      className={`w-5 h-5 ${item.highlight ? "text-primary" : "text-muted-foreground"}`}
+                    />
+                    <span
+                      className={`flex-1 text-left ${item.highlight ? "text-primary font-semibold" : ""}`}
+                    >
+                      {item.label}
+                    </span>
                     <ChevronRight className="w-5 h-5 text-muted-foreground" />
                   </motion.button>
                 ))}
@@ -109,7 +155,7 @@ const HamburgerMenu = ({ onNavigate }: HamburgerMenuProps) => {
 
               {/* Logout */}
               <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border">
-                <button 
+                <button
                   onClick={() => handleItemClick("logout")}
                   className="menu-item w-full text-destructive"
                 >

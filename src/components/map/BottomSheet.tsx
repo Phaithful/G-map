@@ -1,24 +1,40 @@
-import { useState, ReactNode } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import { motion, PanInfo } from "framer-motion";
 import { Share2 } from "lucide-react";
 
 interface BottomSheetProps {
   children: ReactNode;
   expandedContent?: ReactNode;
+  expandedHeader?: ReactNode;
   onShareLocation?: () => void;
+  isExpanded?: boolean;
 }
 
 const BottomSheet = ({
   children,
   expandedContent,
+  expandedHeader,
   onShareLocation,
+  isExpanded = false,
 }: BottomSheetProps) => {
   const [snapIndex, setSnapIndex] = useState(0);
   const snapPoints = [0.35, 0.65, 0.85]; // Percentage of screen height from bottom
 
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+  // Auto-expand when isExpanded prop changes
+  useEffect(() => {
+    if (isExpanded) {
+      setSnapIndex(1); // Expand to first expanded state
+    } else {
+      setSnapIndex(0); // Collapse
+    }
+  }, [isExpanded]);
+
+  const handleDragEnd = (
+    event: MouseEvent | TouchEvent | PointerEvent,
+    info: PanInfo,
+  ) => {
     const velocity = info.velocity.y;
-    
+
     if (velocity < -300) {
       // Swiping up fast
       setSnapIndex(Math.min(snapIndex + 1, snapPoints.length - 1));
@@ -31,7 +47,7 @@ const BottomSheet = ({
       const offset = info.offset.y;
       const screenHeight = window.innerHeight;
       const dragPercentage = offset / screenHeight;
-      
+
       if (dragPercentage < -0.1 && snapIndex < snapPoints.length - 1) {
         setSnapIndex(snapIndex + 1);
       } else if (dragPercentage > 0.1 && snapIndex > 0) {
@@ -41,7 +57,7 @@ const BottomSheet = ({
   };
 
   const currentHeight = snapPoints[snapIndex];
-  const isExpanded = snapIndex >= 1;
+  const isSheetExpanded = snapIndex >= 1;
 
   return (
     <motion.div
@@ -56,16 +72,16 @@ const BottomSheet = ({
     >
       {/* Handle */}
       <div className="sheet-handle cursor-grab active:cursor-grabbing" />
-      
+
       {/* Content */}
-      <div 
+      <div
         className="px-4 pb-8 overflow-y-auto no-scrollbar"
         style={{ maxHeight: `calc(${currentHeight * 100}vh - 2rem)` }}
       >
         {children}
-        
+
         {/* Share Location Button - Only visible when collapsed */}
-        {!isExpanded && (
+        {!isSheetExpanded && (
           <motion.button
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -79,15 +95,26 @@ const BottomSheet = ({
             <span>Share My Location</span>
           </motion.button>
         )}
-        
-        {isExpanded && expandedContent && (
+
+        {isSheetExpanded && (expandedHeader || expandedContent) && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="mt-6"
+            className="mt-6 flex flex-col h-full"
+            style={{ maxHeight: `calc(${currentHeight * 100}vh - 8rem)` }}
           >
-            {expandedContent}
+            {/* Fixed header */}
+            {expandedHeader && (
+              <div className="flex-shrink-0 pb-4">{expandedHeader}</div>
+            )}
+
+            {/* Scrollable content */}
+            {expandedContent && (
+              <div className="flex-1 overflow-y-auto no-scrollbar space-y-3">
+                {expandedContent}
+              </div>
+            )}
           </motion.div>
         )}
       </div>
