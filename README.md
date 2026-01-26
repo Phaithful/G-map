@@ -1,73 +1,78 @@
-# Welcome to your Lovable project
+# G-Map 🌍
 
-## Project info
+G-Map is a **web-based campus and community mapping platform** designed to help users easily discover, locate, and explore important places and services within an institution or local environment.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+The project was developed as a **semester group project** and focuses on simplicity, usability, and real-world relevance.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 🚀 Project Overview
 
-**Use Lovable**
+G-Map provides an interactive map interface where users can quickly find locations such as:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- Academic buildings  
+- Hostels & residences  
+- Cafeterias & food spots  
+- Offices & departments  
+- Event venues  
+- General landmarks  
 
-Changes made via Lovable will be committed automatically to this repo.
+The goal is to reduce confusion, save time, and improve navigation for students, staff, and visitors.
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## ✨ Key Features
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- 🗺️ Interactive map interface  
+- 🔍 Category-based location browsing  
+- 📍 Location markers with details  
+- 📱 Responsive and mobile-friendly UI  
+- 🛠️ Admin support for managing locations (planned)  
+- ⚡ Fast and modern front-end experience  
 
-Follow these steps:
+---
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🧱 Tech Stack
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+- **Frontend:** React + TypeScript  
+- **Styling:** Tailwind CSS  
+- **Build Tool:** Vite  
+- **Package Manager:** npm  
+- **Version Control:** Git & GitHub  
+- **Backend:** Python Django
 
-# Step 3: Install the necessary dependencies.
-npm i
+---
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+## ▶️ How to Run the Project
+
+Follow the steps below to run G-Map locally on your machine.
+
+### 1️⃣ Clone the Repository
+```bash
+git clone https://github.com/your-username/g-map.git
+cd g-map
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📌 Use Case
+- New students navigating campus
+- Visitors finding offices or venues
+- Institutions digitizing their physical layout
+- Schools looking for a simple internal map solution
 
-**Use GitHub Codespaces**
+---
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🛠️ Future Improvements
+- Admin dashboard for managing locations
 
-## What technologies are used for this project?
+---
 
-This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 📄 License
+- This project is for educational purposes
+- Open for learning and collaboration
 
-## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
