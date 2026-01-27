@@ -2,9 +2,14 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, MapPin, Mail, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 import {
   Form,
   FormControl,
@@ -14,31 +19,52 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
-interface LoginFormData {
+interface ForgotPasswordFormData {
   email: string;
-  password: string;
 }
 
-const Login = () => {
+const ForgotPassword = () => {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
+  const [step, setStep] = useState<"email" | "code">("email");
   const [isLoading, setIsLoading] = useState(false);
+  const [otpValue, setOtpValue] = useState("");
+  const [email, setEmail] = useState("");
 
-  const form = useForm<LoginFormData>({
+  const form = useForm<ForgotPasswordFormData>({
     defaultValues: {
       email: "",
-      password: "",
     },
   });
 
-  const onSubmit = async (data: LoginFormData) => {
+  const onSubmitEmail = async (data: ForgotPasswordFormData) => {
     setIsLoading(true);
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log("Login data:", data);
+    console.log("Forgot password email:", data);
+    setEmail(data.email);
     setIsLoading(false);
-    // For now, just navigate to home
-    navigate("/");
+    setStep("code");
+  };
+
+  const onSubmitCode = async () => {
+    if (otpValue.length !== 6) return;
+
+    setIsLoading(true);
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    console.log("OTP verification:", otpValue);
+    setIsLoading(false);
+    // Navigate to reset password page
+    navigate("/reset-password");
+  };
+
+  const handleResendCode = async () => {
+    setIsLoading(true);
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setIsLoading(false);
+    // Reset OTP value
+    setOtpValue("");
   };
 
   return (
@@ -70,13 +96,13 @@ const Login = () => {
               alt="G-Map Logo"
               className="w-20 h-20 mx-auto mb-6 rounded-xl bg-white/10 p-2 backdrop-blur-sm"
             />
-            <h1 className="text-4xl font-bold mb-4">Welcome to G-Map</h1>
+            <h1 className="text-4xl font-bold mb-4">Reset Your Password</h1>
             <p className="text-xl opacity-90 mb-8">
-              Navigate Godfrey Okoye University with ease
+              We'll help you get back into your account
             </p>
             <div className="flex items-center justify-center gap-2 text-lg">
               <MapPin className="w-6 h-6" />
-              <span>Your campus companion</span>
+              <span>Secure & Easy</span>
             </div>
           </motion.div>
         </div>
@@ -90,7 +116,7 @@ const Login = () => {
         </div>
       </motion.div>
 
-      {/* Right Side - Login Form */}
+      {/* Right Side - Form */}
       <motion.div
         initial={{ opacity: 0, x: 50 }}
         animate={{ opacity: 1, x: 0 }}
@@ -121,7 +147,7 @@ const Login = () => {
               transition={{ delay: 0.3 }}
               className="text-3xl font-bold text-foreground"
             >
-              Sign In
+              {step === "email" ? "Forgot Password" : "Enter Code"}
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 10 }}
@@ -129,7 +155,9 @@ const Login = () => {
               transition={{ delay: 0.4 }}
               className="mt-2 text-muted-foreground"
             >
-              Access your campus navigation
+              {step === "email"
+                ? "Enter your email to reset your password"
+                : `We've sent a 6-digit code to ${email}`}
             </motion.p>
           </div>
 
@@ -139,100 +167,95 @@ const Login = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6"
-              >
-                <FormField
-                  control={form.control}
-                  name="email"
-                  rules={{
-                    required: "Email is required",
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: "Invalid email address",
-                    },
-                  }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">
-                        Email Address
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="Enter your email"
-                          className="h-12 text-base"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="password"
-                  rules={{
-                    required: "Password is required",
-                    minLength: {
-                      value: 6,
-                      message: "Password must be at least 6 characters",
-                    },
-                  }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-foreground">
-                        Password
-                      </FormLabel>
-                      <FormControl>
-                        <div className="relative">
+            {step === "email" ? (
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(onSubmitEmail)}
+                  className="space-y-6"
+                >
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    rules={{
+                      required: "Email is required",
+                      pattern: {
+                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        message: "Invalid email address",
+                      },
+                    }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground">
+                          Email Address
+                        </FormLabel>
+                        <FormControl>
                           <Input
-                            type={showPassword ? "text" : "password"}
-                            placeholder="Enter your password"
-                            className="h-12 text-base pr-12"
+                            type="email"
+                            placeholder="Enter your email"
+                            className="h-12 text-base"
                             {...field}
                           />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-0 top-0 h-12 w-12 hover:bg-transparent"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? (
-                              <EyeOff className="h-5 w-5 text-muted-foreground" />
-                            ) : (
-                              <Eye className="h-5 w-5 text-muted-foreground" />
-                            )}
-                          </Button>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <div className="text-right">
-                  <Link
-                    to="/forgot-password"
-                    className="text-sm text-primary hover:underline"
+                  <Button
+                    type="submit"
+                    className="w-full h-12 text-base font-semibold"
+                    disabled={isLoading}
                   >
-                    Forgot password?
-                  </Link>
+                    {isLoading ? "Sending..." : "Send Reset Code"}
+                  </Button>
+                </form>
+              </Form>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex justify-center">
+                  <InputOTP
+                    maxLength={6}
+                    value={otpValue}
+                    onChange={setOtpValue}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+
+                <div className="text-center text-sm text-muted-foreground">
+                  <Mail className="w-4 h-4 inline mr-1" />
+                  Check your email for the verification code
                 </div>
 
                 <Button
-                  type="submit"
+                  onClick={onSubmitCode}
                   className="w-full h-12 text-base font-semibold"
-                  disabled={isLoading}
+                  disabled={isLoading || otpValue.length !== 6}
                 >
-                  {isLoading ? "Signing in..." : "Sign In"}
+                  {isLoading ? "Verifying..." : "Verify Code"}
                 </Button>
-              </form>
-            </Form>
+
+                <div className="text-center">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handleResendCode}
+                    disabled={isLoading}
+                    className="text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Didn't receive code? Resend
+                  </Button>
+                </div>
+              </div>
+            )}
           </motion.div>
 
           {/* Footer */}
@@ -254,12 +277,12 @@ const Login = () => {
             </div>
 
             <p className="text-muted-foreground">
-              Don't have an account?{" "}
+              Remember your password?{" "}
               <Link
-                to="/signup"
+                to="/login"
                 className="text-primary hover:underline font-semibold"
               >
-                Create one
+                Sign in
               </Link>
             </p>
           </motion.div>
@@ -273,11 +296,11 @@ const Login = () => {
           >
             <Button
               variant="ghost"
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/login")}
               className="w-full text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Map
+              Back to Login
             </Button>
           </motion.div>
         </div>
@@ -286,4 +309,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default ForgotPassword;

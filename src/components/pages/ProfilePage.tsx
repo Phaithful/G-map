@@ -76,7 +76,8 @@ const ProfilePage = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-background"
+      className="fixed inset-0 z-50 bg-white dark:bg-background overflow-y-auto"
+
     >
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-border">

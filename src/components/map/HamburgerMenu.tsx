@@ -138,18 +138,17 @@ const HamburgerMenu = ({ onNavigate }: HamburgerMenuProps) => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
                     onClick={() => handleItemClick(item.id)}
-                    className={`menu-item w-full ${item.highlight ? "bg-primary/10" : ""}`}
+                    className="menu-item w-full flex items-center gap-3"
                   >
-                    <item.icon
-                      className={`w-5 h-5 ${item.highlight ? "text-primary" : "text-muted-foreground"}`}
-                    />
-                    <span
-                      className={`flex-1 text-left ${item.highlight ? "text-primary font-semibold" : ""}`}
-                    >
+                    <item.icon className="w-5 h-5 text-muted-foreground" />
+
+                    <span className="flex-1 text-left">
                       {item.label}
                     </span>
+
                     <ChevronRight className="w-5 h-5 text-muted-foreground" />
                   </motion.button>
+
                 ))}
               </div>
 

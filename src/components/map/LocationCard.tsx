@@ -11,16 +11,17 @@ import {
   ShoppingBag 
 } from "lucide-react";
 import { motion } from "framer-motion";
+import type { Location } from "../../types";
 
-export interface Location {
-  id: string;
-  name: string;
-  category: string;
-  distance: string;
-  description?: string;
-  openingHours?: string;
-  imageUrl?: string;
-}
+// export interface Location {
+//   id: string;
+//   name: string;
+//   category: string;
+//   distance: string;
+//   description?: string;
+//   openingHours?: string;
+//   imageUrl?: string;
+// }
 
 interface LocationCardProps {
   location: Location;

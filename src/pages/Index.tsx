@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import MapView from "../components/map/MapView";
 import SearchBar from "../components/map/SearchBar";
 import BottomSheet from "../components/map/BottomSheet";
 import CategoryChips from "../components/map/CategoryChips";
-import LocationCard, { Location } from "../components/map/LocationCard";
+import type { Location } from "../types";
+import LocationCard from "../components/map/LocationCard";
 import LocationDetails from "../components/map/LocationDetails";
 import NavigationMode from "../components/map/NavigationMode";
 import HamburgerMenu from "../components/map/HamburgerMenu";
@@ -15,6 +16,10 @@ import SettingsPage from "../components/pages/SettingsPage";
 import campusLocations from "../data/locations";
 
 const Index = () => {
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(
@@ -23,11 +28,58 @@ const Index = () => {
   const [showLocationDetails, setShowLocationDetails] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [currentPage, setCurrentPage] = useState<string | null>(null);
-  const [savedLocations, setSavedLocations] = useState<Location[]>([
-    campusLocations[0],
-    campusLocations[2],
-  ]);
+  const [savedLocations, setSavedLocations] = useState<Location[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Initialize dark mode and saved locations on app startup
+  useEffect(() => {
+    // Dark mode initialization
+    const savedDarkMode = localStorage.getItem("darkMode") === "true";
+    if (savedDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+
+    // Saved locations initialization
+    const savedLocationsData = localStorage.getItem("savedLocations");
+    if (savedLocationsData) {
+      try {
+        const parsedLocations = JSON.parse(savedLocationsData);
+        // Validate that the saved locations exist in our campus locations
+        const validLocations = parsedLocations.filter((savedLoc: Location) =>
+          campusLocations.some((campusLoc) => campusLoc.id === savedLoc.id),
+        );
+        setSavedLocations(validLocations);
+      } catch (error) {
+        console.error("Error loading saved locations:", error);
+        setSavedLocations([]);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      (err) => {
+        console.error("Geolocation error:", err);
+        // Fallback to campus center if geolocation fails
+        setUserLocation({ lat: 6.8442, lng: 7.3739 });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000, // 5 minutes
+      },
+    );
+  }, []);
 
   // Filter locations
   const filteredLocations = campusLocations.filter((loc) => {
@@ -38,6 +90,27 @@ const Index = () => {
       loc.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  // Get locations for expanded content - one from each category when no category selected
+  const expandedLocations = selectedCategory
+    ? filteredLocations
+    : Object.values(
+        campusLocations
+          .filter(
+            (loc) =>
+              !searchQuery ||
+              loc.name.toLowerCase().includes(searchQuery.toLowerCase()),
+          )
+          .reduce(
+            (acc, loc) => {
+              if (!acc[loc.category]) {
+                acc[loc.category] = loc;
+              }
+              return acc;
+            },
+            {} as Record<string, Location>,
+          ),
+      );
 
   const handleLocationSelect = (location: Location) => {
     setSelectedLocation(location);
@@ -50,22 +123,33 @@ const Index = () => {
   };
 
   const handleSaveLocation = () => {
-    if (selectedLocation) {
-      const isAlreadySaved = savedLocations.find(
-        (l) => l.id === selectedLocation.id,
+    if (!selectedLocation) return;
+
+    const isAlreadySaved = savedLocations.some(
+      (location) => location.id === selectedLocation.id,
+    );
+
+    let newSavedLocations: Location[];
+    if (isAlreadySaved) {
+      // Remove from saved locations
+      newSavedLocations = savedLocations.filter(
+        (location) => location.id !== selectedLocation.id,
       );
-      if (isAlreadySaved) {
-        setSavedLocations(
-          savedLocations.filter((l) => l.id !== selectedLocation.id),
-        );
-      } else {
-        setSavedLocations([...savedLocations, selectedLocation]);
-      }
+    } else {
+      // Add to saved locations
+      newSavedLocations = [...savedLocations, selectedLocation];
     }
+
+    setSavedLocations(newSavedLocations);
+    localStorage.setItem("savedLocations", JSON.stringify(newSavedLocations));
   };
 
   const handleRemoveSaved = (id: string) => {
-    setSavedLocations(savedLocations.filter((l) => l.id !== id));
+    const newSavedLocations = savedLocations.filter(
+      (location) => location.id !== id,
+    );
+    setSavedLocations(newSavedLocations);
+    localStorage.setItem("savedLocations", JSON.stringify(newSavedLocations));
   };
 
   const handleMenuNavigate = (page: string) => {
@@ -120,13 +204,15 @@ const Index = () => {
         savedCount={savedLocations.length}
       />
     );
-  }
+}
 
   if (currentPage === "saved") {
     return (
       <SavedLocationsPage
         onBack={() => setCurrentPage(null)}
-        savedLocations={savedLocations}
+        savedLocations={savedLocations.sort((a, b) =>
+          a.name.localeCompare(b.name),
+        )}
         onRemove={handleRemoveSaved}
         onSelect={(loc) => {
           setCurrentPage(null);
@@ -147,8 +233,8 @@ const Index = () => {
         locations={filteredLocations.map((l) => ({
           id: l.id,
           name: l.name,
-          lat: 0,
-          lng: 0,
+          lat: l.lat,
+          lng: l.lng,
           category: l.category,
         }))}
         selectedLocation={
@@ -156,8 +242,8 @@ const Index = () => {
             ? {
                 id: selectedLocation.id,
                 name: selectedLocation.name,
-                lat: 0,
-                lng: 0,
+                lat: selectedLocation.lat,
+                lng: selectedLocation.lng,
                 category: selectedLocation.category,
               }
             : null
@@ -174,28 +260,7 @@ const Index = () => {
             }
           }
         }}
-        onMapClick={() => setSelectedCategory(null)}
-        userLocation={{ lat: 0, lng: 0 }}
-        route={
-          isNavigating && selectedLocation
-            ? {
-                start: {
-                  id: "user",
-                  name: "You",
-                  lat: 0,
-                  lng: 0,
-                  category: "",
-                },
-                end: {
-                  id: selectedLocation.id,
-                  name: selectedLocation.name,
-                  lat: 0,
-                  lng: 0,
-                  category: selectedLocation.category,
-                },
-              }
-            : null
-        }
+        userLocation={userLocation}
       />
 
       {/* Search bar */}
@@ -222,7 +287,7 @@ const Index = () => {
           expandedHeader={
             <h3 className="text-lg font-semibold">{getCategoryTitle()}</h3>
           }
-          expandedContent={filteredLocations.map((location) => (
+          expandedContent={expandedLocations.map((location) => (
             <LocationCard
               key={location.id}
               location={location}

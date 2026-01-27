@@ -1,6 +1,6 @@
 import { ArrowLeft, Navigation, Heart, Share2, Clock, MapPin, AlertCircle, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Location } from "./LocationCard";
+import type { Location } from "../../types";
 import OptimizedImage from "../ui/OptimizedImage";
 import { locationImages, categoryFallbacks } from "../../data/locationImages";
 
