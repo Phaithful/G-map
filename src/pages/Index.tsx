@@ -20,6 +20,26 @@ const Index = () => {
     lat: number;
     lng: number;
   } | null>(null);
+  const [heading, setHeading] = useState<number | null>(null);
+  // Listen for device orientation (compass heading)
+  useEffect(() => {
+    function handleOrientation(event: DeviceOrientationEvent) {
+      // Prefer 'webkitCompassHeading' for iOS, otherwise use 'alpha'
+      let compassHeading = null;
+      if (event.webkitCompassHeading !== undefined) {
+        compassHeading = event.webkitCompassHeading;
+      } else if (event.alpha !== null) {
+        // Convert alpha to compass heading (0 = north)
+        compassHeading = 360 - event.alpha;
+      }
+      if (typeof compassHeading === "number" && !isNaN(compassHeading)) {
+        setHeading(compassHeading);
+      }
+    }
+    window.addEventListener("deviceorientation", handleOrientation, true);
+    return () =>
+      window.removeEventListener("deviceorientation", handleOrientation, true);
+  }, []);
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(
@@ -204,7 +224,7 @@ const Index = () => {
         savedCount={savedLocations.length}
       />
     );
-}
+  }
 
   if (currentPage === "saved") {
     return (
@@ -252,15 +272,14 @@ const Index = () => {
           const fullLocation = campusLocations.find((l) => l.id === loc.id);
           if (fullLocation) {
             if (isNavigating) {
-              // If already navigating, update destination to new location
               setSelectedLocation(fullLocation);
             } else {
-              // Normal pin click - show location details
               handleLocationSelect(fullLocation);
             }
           }
         }}
         userLocation={userLocation}
+        heading={heading}
       />
 
       {/* Search bar */}

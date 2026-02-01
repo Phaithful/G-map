@@ -4,7 +4,7 @@ import mapboxgl from "mapbox-gl";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { Location } from "../../types";
 
-// Import icons from lucide-react
+// Import icons
 import {
   GraduationCap,
   Building2,
@@ -23,10 +23,11 @@ interface MapViewProps {
   selectedLocation?: Location | null;
   onPinClick?: (location: Location) => void;
   userLocation?: { lat: number; lng: number } | null;
+  heading?: number | null;
 }
 
 // ------------------------
-// Icon & Color helpers
+// Helpers
 // ------------------------
 const getCategoryIcon = (category: string) => {
   const icons: Record<string, typeof GraduationCap> = {
@@ -44,55 +45,69 @@ const getCategoryIcon = (category: string) => {
 
 const getCategoryColor = (category: string) => {
   const colors: Record<string, string> = {
-    academics: "#3b82f6", // blue
-    offices: "#64748b", // slate
-    hostels: "#8b5cf6", // purple
-    food: "#f97316", // orange
-    health: "#ef4444", // red
-    churches: "#d97706", // amber
-    sports: "#10b981", // green
-    shops: "#ec4899", // pink
+    academics: "#3b82f6",
+    offices: "#64748b",
+    hostels: "#8b5cf6",
+    food: "#f97316",
+    health: "#ef4444",
+    churches: "#d97706",
+    sports: "#10b981",
+    shops: "#ec4899",
   };
   return colors[category] || "#2563eb";
 };
 
 // ------------------------
-// MapView component
+// MapView Component
 // ------------------------
 const MapView = ({
   locations = [],
   selectedLocation,
   onPinClick,
   userLocation,
+  heading,
 }: MapViewProps) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
+  // ------------------------
   // Initialize Mapbox
+  // ------------------------
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
-
-    const defaultCenter: [number, number] = [7.3739, 6.8442];
 
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: "mapbox://styles/mapbox/streets-v12",
-      center: defaultCenter,
-      zoom: 16,
-      pitch: 45,
+      center: [7.526536274555406, 6.468611159365743], // fallback campus center
+      zoom: 15,
+      minZoom: 14,
+      maxZoom: 19,
     });
 
+    // Lock rotation & add navigation controls
+    mapRef.current.dragRotate.disable();
+    mapRef.current.touchZoomRotate.disableRotation();
     mapRef.current.addControl(new mapboxgl.NavigationControl(), "top-right");
 
+    // Lock map to campus bounds
+    // mapRef.current.setMaxBounds([
+    //   [7.5256750, 6.4667163],
+    //   [7.5308232, 6.4719171],
+    // ]);
+
+    // Cleanup
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
     };
   }, []);
 
+  // ------------------------
   // User location marker + camera
+  // ------------------------
   useEffect(() => {
     if (!mapRef.current || !userLocation) return;
 
@@ -101,59 +116,54 @@ const MapView = ({
     // Remove old marker
     userMarkerRef.current?.remove();
 
-    // Create new marker element
+    // Create marker (triangle with optional heading)
     const el = document.createElement("div");
-    el.style.width = "20px";
-    el.style.height = "20px";
-    el.style.borderRadius = "50%";
-    el.style.background = "#2563eb";
-    el.style.border = "3px solid white";
-    el.style.boxShadow = "0 0 0 2px rgba(37, 99, 235, 0.3)";
+    el.style.width = "32px";
+    el.style.height = "32px";
     el.style.display = "flex";
     el.style.alignItems = "center";
     el.style.justifyContent = "center";
+    el.style.background = "none";
+
+    if (typeof heading === "number" && !isNaN(heading)) {
+      el.style.transform = `rotate(${heading}deg)`;
+    }
 
     el.innerHTML = `
-      <div style="
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        background: #2563eb;
-        animation: pulse 2s infinite;
-      "></div>
-      <style>
-        @keyframes pulse {
-          0% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.5); opacity: 0.7; }
-          100% { transform: scale(1); opacity: 1; }
-        }
-      </style>
+      <svg width="32" height="32" viewBox="0 0 32 32" style="display:block;">
+        <polygon points="16,4 28,28 4,28" fill="#2563eb" stroke="white" stroke-width="2" />
+      </svg>
     `;
 
     userMarkerRef.current = new mapboxgl.Marker(el)
       .setLngLat([lng, lat])
       .addTo(mapRef.current);
 
-    // Fly to user location
+    // Fly to user
     mapRef.current.flyTo({
       center: [lng, lat],
-      zoom: 18,
-      duration: 2000,
+      zoom: 17,
+      speed: 1.4,
+      curve: 1.42,
+      essential: true,
     });
 
-    // Cleanup
     return () => {
       userMarkerRef.current?.remove();
       userMarkerRef.current = null;
     };
-  }, [userLocation]);
+  }, [userLocation, heading]);
 
+  console.log("USER LOCATION:", userLocation);
+
+  // ------------------------
   // Render location markers
+  // ------------------------
   useEffect(() => {
     if (!mapRef.current) return;
 
     // Remove old markers
-    markersRef.current.forEach((marker) => marker.remove());
+    markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
     locations.forEach((location) => {
@@ -184,6 +194,9 @@ const MapView = ({
     });
   }, [locations, selectedLocation]);
 
+  // ------------------------
+  // Render
+  // ------------------------
   return (
     <div className="absolute inset-0">
       <div ref={mapContainerRef} className="w-full h-full" />
@@ -192,3 +205,5 @@ const MapView = ({
 };
 
 export default MapView;
+
+
