@@ -23,6 +23,8 @@ interface ForgotPasswordFormData {
   email: string;
 }
 
+const API_BASE = "http://127.0.0.1:8000";
+
 const ForgotPassword = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<"email" | "code">("email");
@@ -31,40 +33,97 @@ const ForgotPassword = () => {
   const [email, setEmail] = useState("");
 
   const form = useForm<ForgotPasswordFormData>({
-    defaultValues: {
-      email: "",
-    },
+    defaultValues: { email: "" },
   });
 
   const onSubmitEmail = async (data: ForgotPasswordFormData) => {
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log("Forgot password email:", data);
-    setEmail(data.email);
-    setIsLoading(false);
-    setStep("code");
+    try {
+      setIsLoading(true);
+      form.clearErrors();
+
+      const res = await fetch(`${API_BASE}/api/auth/forgot-password/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.email }),
+      });
+
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        form.setError("email", {
+          message: json?.error || "Failed to send reset code.",
+        });
+        return;
+      }
+
+      setEmail(data.email);
+      setOtpValue("");
+      setStep("code");
+    } catch {
+      form.setError("email", { message: "Network error. Try again." });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const onSubmitCode = async () => {
     if (otpValue.length !== 6) return;
 
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log("OTP verification:", otpValue);
-    setIsLoading(false);
-    // Navigate to reset password page
-    navigate("/reset-password");
+    try {
+      setIsLoading(true);
+
+      const res = await fetch(`${API_BASE}/api/auth/verify-reset-otp/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp: otpValue }),
+      });
+
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        // show error nicely under the OTP area by using a basic alert-style approach
+        // (you can replace with toast later)
+        setOtpValue("");
+        return alert(json?.error || "Invalid or expired code. Try again.");
+      }
+
+      const resetToken = json.resetToken;
+      if (!resetToken) {
+        return alert("Reset token missing. Please resend code.");
+      }
+
+      // ✅ pass token to reset page
+      navigate(`/reset-password?token=${encodeURIComponent(resetToken)}`);
+    } catch {
+      alert("Network error. Try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleResendCode = async () => {
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
-    // Reset OTP value
-    setOtpValue("");
+    try {
+      setIsLoading(true);
+
+      const res = await fetch(`${API_BASE}/api/auth/forgot-password/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        alert(json?.error || "Failed to resend code.");
+        return;
+      }
+
+      setOtpValue("");
+    } catch {
+      alert("Network error. Try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -294,14 +353,7 @@ const ForgotPassword = () => {
             transition={{ delay: 0.7 }}
             className="pt-4"
           >
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/login")}
-              className="w-full text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Login
-            </Button>
+            
           </motion.div>
         </div>
       </motion.div>

@@ -15,36 +15,55 @@ import SavedLocationsPage from "../components/pages/SavedLocationsPage";
 import SettingsPage from "../components/pages/SettingsPage";
 import campusLocations from "../data/locations";
 
+// ✅ IMPORTANT: no ".ts" here
+import { useAuthUser } from "@/hooks/useAuthUser";
+
 const Index = () => {
+  const navigate = useNavigate();
+
+  // ✅ logged-in user (name/email) from storage
+  const { user, isAuthenticated, ready, logout } = useAuthUser();
+
   const [userLocation, setUserLocation] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
+
   const [heading, setHeading] = useState<number | null>(null);
-  // Listen for device orientation (compass heading)
+
+  // ✅ OPTIONAL: protect this page (redirect to login if not signed in)
+  useEffect(() => {
+    if (ready && !isAuthenticated) {
+      navigate("/login");
+    }
+  }, [ready, isAuthenticated, navigate]);
+
+  // ✅ Listen for device orientation (compass heading)
   useEffect(() => {
     function handleOrientation(event: DeviceOrientationEvent) {
-      // Prefer 'webkitCompassHeading' for iOS, otherwise use 'alpha'
-      let compassHeading = null;
+      let compassHeading: number | null = null;
+
+      // @ts-ignore - webkitCompassHeading exists on iOS Safari
       if (event.webkitCompassHeading !== undefined) {
+        // @ts-ignore
         compassHeading = event.webkitCompassHeading;
       } else if (event.alpha !== null) {
-        // Convert alpha to compass heading (0 = north)
         compassHeading = 360 - event.alpha;
       }
+
       if (typeof compassHeading === "number" && !isNaN(compassHeading)) {
         setHeading(compassHeading);
       }
     }
+
     window.addEventListener("deviceorientation", handleOrientation, true);
-    return () =>
+    return () => {
       window.removeEventListener("deviceorientation", handleOrientation, true);
+    };
   }, []);
-  const navigate = useNavigate();
+
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(
-    null,
-  );
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [showLocationDetails, setShowLocationDetails] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [currentPage, setCurrentPage] = useState<string | null>(null);
@@ -53,7 +72,6 @@ const Index = () => {
 
   // Initialize dark mode and saved locations on app startup
   useEffect(() => {
-    // Dark mode initialization
     const savedDarkMode = localStorage.getItem("darkMode") === "true";
     if (savedDarkMode) {
       document.documentElement.classList.add("dark");
@@ -61,12 +79,10 @@ const Index = () => {
       document.documentElement.classList.remove("dark");
     }
 
-    // Saved locations initialization
     const savedLocationsData = localStorage.getItem("savedLocations");
     if (savedLocationsData) {
       try {
         const parsedLocations = JSON.parse(savedLocationsData);
-        // Validate that the saved locations exist in our campus locations
         const validLocations = parsedLocations.filter((savedLoc: Location) =>
           campusLocations.some((campusLoc) => campusLoc.id === savedLoc.id),
         );
@@ -78,40 +94,46 @@ const Index = () => {
     }
   }, []);
 
+  // ✅ Real-time location tracking (watchPosition)
   useEffect(() => {
     if (!navigator.geolocation) return;
 
-    navigator.geolocation.getCurrentPosition(
+    const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         setUserLocation({
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         });
+
+        if (typeof pos.coords.heading === "number" && !isNaN(pos.coords.heading)) {
+          setHeading(pos.coords.heading);
+        }
       },
       (err) => {
         console.error("Geolocation error:", err);
-        // Fallback to campus center if geolocation fails
         setUserLocation({ lat: 6.8442, lng: 7.3739 });
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000, // 5 minutes
+        timeout: 20000,
+        maximumAge: 0,
       },
     );
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
   }, []);
 
   // Filter locations
   const filteredLocations = campusLocations.filter((loc) => {
-    const matchesCategory =
-      !selectedCategory || loc.category === selectedCategory;
+    const matchesCategory = !selectedCategory || loc.category === selectedCategory;
     const matchesSearch =
-      !searchQuery ||
-      loc.name.toLowerCase().includes(searchQuery.toLowerCase());
+      !searchQuery || loc.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
-  // Get locations for expanded content - one from each category when no category selected
+  // Expanded content
   const expandedLocations = selectedCategory
     ? filteredLocations
     : Object.values(
@@ -123,9 +145,7 @@ const Index = () => {
           )
           .reduce(
             (acc, loc) => {
-              if (!acc[loc.category]) {
-                acc[loc.category] = loc;
-              }
+              if (!acc[loc.category]) acc[loc.category] = loc;
               return acc;
             },
             {} as Record<string, Location>,
@@ -151,12 +171,10 @@ const Index = () => {
 
     let newSavedLocations: Location[];
     if (isAlreadySaved) {
-      // Remove from saved locations
       newSavedLocations = savedLocations.filter(
         (location) => location.id !== selectedLocation.id,
       );
     } else {
-      // Add to saved locations
       newSavedLocations = [...savedLocations, selectedLocation];
     }
 
@@ -165,24 +183,22 @@ const Index = () => {
   };
 
   const handleRemoveSaved = (id: string) => {
-    const newSavedLocations = savedLocations.filter(
-      (location) => location.id !== id,
-    );
+    const newSavedLocations = savedLocations.filter((location) => location.id !== id);
     setSavedLocations(newSavedLocations);
     localStorage.setItem("savedLocations", JSON.stringify(newSavedLocations));
   };
 
   const handleMenuNavigate = (page: string) => {
     if (page === "logout") {
-      // Handle logout - navigate to login page
+      logout(); // ✅ clears tokens + user inside the hook
       navigate("/login");
-    } else {
-      setCurrentPage(page);
+      return;
     }
+
+    setCurrentPage(page);
   };
 
   const handleShareLocation = () => {
-    // Share location functionality - for now just show an alert
     if (navigator.share) {
       navigator.share({
         title: "My Location - G-Map",
@@ -194,12 +210,10 @@ const Index = () => {
     }
   };
 
-  // Check if selected location is saved
   const isLocationSaved = selectedLocation
     ? savedLocations.some((l) => l.id === selectedLocation.id)
     : false;
 
-  // Get category name for expanded content title
   const getCategoryTitle = () => {
     if (!selectedCategory) return "Popular Locations";
     const categoryMap: Record<string, string> = {
@@ -230,9 +244,7 @@ const Index = () => {
     return (
       <SavedLocationsPage
         onBack={() => setCurrentPage(null)}
-        savedLocations={savedLocations.sort((a, b) =>
-          a.name.localeCompare(b.name),
-        )}
+        savedLocations={savedLocations.sort((a, b) => a.name.localeCompare(b.name))}
         onRemove={handleRemoveSaved}
         onSelect={(loc) => {
           setCurrentPage(null);
@@ -248,6 +260,23 @@ const Index = () => {
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-background">
+      {/* ✅ Logged-in user pill */}
+      <div className="absolute top-4 left-4 z-50">
+        {isAuthenticated && user ? (
+          <div className="rounded-full border bg-background/80 backdrop-blur px-4 py-2 shadow-sm">
+            <p className="text-sm font-semibold leading-tight">{user.name}</p>
+            <p className="text-xs text-muted-foreground leading-tight">{user.email}</p>
+          </div>
+        ) : (
+          <button
+            onClick={() => navigate("/login")}
+            className="rounded-full border bg-background/80 backdrop-blur px-4 py-2 shadow-sm text-sm"
+          >
+            Sign in
+          </button>
+        )}
+      </div>
+
       {/* Map */}
       <MapView
         locations={filteredLocations.map((l) => ({
@@ -303,9 +332,7 @@ const Index = () => {
         <BottomSheet
           onShareLocation={handleShareLocation}
           isExpanded={!!selectedCategory}
-          expandedHeader={
-            <h3 className="text-lg font-semibold">{getCategoryTitle()}</h3>
-          }
+          expandedHeader={<h3 className="text-lg font-semibold">{getCategoryTitle()}</h3>}
           expandedContent={expandedLocations.map((location) => (
             <LocationCard
               key={location.id}
@@ -351,9 +378,7 @@ const Index = () => {
           setIsNavigating(false);
           setSelectedLocation(null);
         }}
-        onStart={() => {
-          // Start navigation
-        }}
+        onStart={() => {}}
         onMenuNavigate={handleMenuNavigate}
       />
     </div>

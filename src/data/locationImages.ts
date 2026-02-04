@@ -13,6 +13,7 @@ export const locationImages: Record<string, string> = {
   "10": "/images/locations/st_francis.JPG",
   "11": "/images/locations/mariam_unachukwu.JPG",
   "12": "/images/locations/regina.JPG",
+  
 
   // Academic buildings
   "13": "/images/locations/convocation-arena.jpg",

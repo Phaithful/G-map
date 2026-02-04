@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
 import { ArrowLeft, MapPin, Eye, EyeOff, CheckCircle } from "lucide-react";
@@ -19,8 +19,12 @@ interface ResetPasswordFormData {
   confirmPassword: string;
 }
 
+const API_BASE = "http://127.0.0.1:8000";
+
 const ResetPassword = () => {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const [resetToken, setResetToken] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,6 +37,18 @@ const ResetPassword = () => {
     },
   });
 
+  useEffect(() => {
+    const t = params.get("token");
+    if (!t) {
+      // no token -> they shouldn't be here
+      form.setError("password", {
+        message: "Reset token missing. Please restart the reset process.",
+      });
+      return;
+    }
+    setResetToken(t);
+  }, [params, form]);
+
   const onSubmit = async (data: ResetPasswordFormData) => {
     if (data.password !== data.confirmPassword) {
       form.setError("confirmPassword", {
@@ -42,23 +58,51 @@ const ResetPassword = () => {
       return;
     }
 
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log("Reset password:", data);
-    setIsLoading(false);
-    setIsSuccess(true);
+    if (!resetToken) {
+      form.setError("password", {
+        message: "Reset token missing. Please restart the reset process.",
+      });
+      return;
+    }
 
-    // Navigate to login after showing success message
-    setTimeout(() => {
-      navigate("/login");
-    }, 2000);
+    try {
+      setIsLoading(true);
+      form.clearErrors();
+
+      const res = await fetch(`${API_BASE}/api/auth/reset-password/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          resetToken,
+          password: data.password,
+        }),
+      });
+
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        form.setError("password", {
+          message: json?.error || "Failed to reset password.",
+        });
+        return;
+      }
+
+      setIsSuccess(true);
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    } catch {
+      form.setError("password", { message: "Network error. Try again." });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isSuccess) {
     return (
       <div className="min-h-screen flex">
-        {/* Left Side - School Image */}
+        {/* Left Side */}
         <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
@@ -71,8 +115,6 @@ const ResetPassword = () => {
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary/40" />
-
-          {/* Branding Overlay */}
           <div className="absolute inset-0 flex flex-col justify-center items-center text-white p-12">
             <motion.div
               initial={{ opacity: 0, y: 15 }}
@@ -95,17 +137,9 @@ const ResetPassword = () => {
               </div>
             </motion.div>
           </div>
-
-          {/* Decorative Elements */}
-          <div className="absolute top-8 left-8">
-            <div className="w-32 h-32 rounded-full bg-white/10 backdrop-blur-sm" />
-          </div>
-          <div className="absolute bottom-8 right-8">
-            <div className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-sm" />
-          </div>
         </motion.div>
 
-        {/* Right Side - Success Message */}
+        {/* Right Side */}
         <motion.div
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
@@ -113,22 +147,6 @@ const ResetPassword = () => {
           className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 bg-background"
         >
           <div className="w-full max-w-md space-y-8">
-            {/* Mobile Logo */}
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="lg:hidden text-center"
-            >
-              <img
-                src="/Logo.png"
-                alt="G-Map Logo"
-                className="w-16 h-16 mx-auto mb-4 rounded-lg bg-primary/10 p-2"
-              />
-              <h1 className="text-2xl font-bold text-primary">G-Map</h1>
-            </motion.div>
-
-            {/* Success Message */}
             <div className="text-center">
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -146,8 +164,6 @@ const ResetPassword = () => {
                 </p>
               </motion.div>
             </div>
-
-            {/* Redirect Message */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -166,7 +182,7 @@ const ResetPassword = () => {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Side - School Image */}
+      {/* Left Side */}
       <motion.div
         initial={{ opacity: 0, x: -50 }}
         animate={{ opacity: 1, x: 0 }}
@@ -179,8 +195,6 @@ const ResetPassword = () => {
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary/40" />
-
-        {/* Branding Overlay */}
         <div className="absolute inset-0 flex flex-col justify-center items-center text-white p-12">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
@@ -203,17 +217,9 @@ const ResetPassword = () => {
             </div>
           </motion.div>
         </div>
-
-        {/* Decorative Elements */}
-        <div className="absolute top-8 left-8">
-          <div className="w-32 h-32 rounded-full bg-white/10 backdrop-blur-sm" />
-        </div>
-        <div className="absolute bottom-8 right-8">
-          <div className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-sm" />
-        </div>
       </motion.div>
 
-      {/* Right Side - Reset Password Form */}
+      {/* Right Side - Form */}
       <motion.div
         initial={{ opacity: 0, x: 50 }}
         animate={{ opacity: 1, x: 0 }}
@@ -221,22 +227,6 @@ const ResetPassword = () => {
         className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 bg-background"
       >
         <div className="w-full max-w-md space-y-8">
-          {/* Mobile Logo */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="lg:hidden text-center"
-          >
-            <img
-              src="/Logo.png"
-              alt="G-Map Logo"
-              className="w-16 h-16 mx-auto mb-4 rounded-lg bg-primary/10 p-2"
-            />
-            <h1 className="text-2xl font-bold text-primary">G-Map</h1>
-          </motion.div>
-
-          {/* Header */}
           <div className="text-center">
             <motion.h2
               initial={{ opacity: 0, y: 10 }}
@@ -256,7 +246,6 @@ const ResetPassword = () => {
             </motion.p>
           </div>
 
-          {/* Form */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -272,10 +261,7 @@ const ResetPassword = () => {
                   name="password"
                   rules={{
                     required: "Password is required",
-                    minLength: {
-                      value: 8,
-                      message: "Password must be at least 8 characters",
-                    },
+                    minLength: { value: 8, message: "Password must be at least 8 characters" },
                     pattern: {
                       value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
                       message:
@@ -284,9 +270,7 @@ const ResetPassword = () => {
                   }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-foreground">
-                        New Password
-                      </FormLabel>
+                      <FormLabel className="text-foreground">New Password</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
@@ -318,14 +302,10 @@ const ResetPassword = () => {
                 <FormField
                   control={form.control}
                   name="confirmPassword"
-                  rules={{
-                    required: "Please confirm your password",
-                  }}
+                  rules={{ required: "Please confirm your password" }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-foreground">
-                        Confirm New Password
-                      </FormLabel>
+                      <FormLabel className="text-foreground">Confirm New Password</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
@@ -339,9 +319,7 @@ const ResetPassword = () => {
                             variant="ghost"
                             size="icon"
                             className="absolute right-0 top-0 h-12 w-12 hover:bg-transparent"
-                            onClick={() =>
-                              setShowConfirmPassword(!showConfirmPassword)
-                            }
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                           >
                             {showConfirmPassword ? (
                               <EyeOff className="h-5 w-5 text-muted-foreground" />
@@ -367,7 +345,6 @@ const ResetPassword = () => {
             </Form>
           </motion.div>
 
-          {/* Footer */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -379,38 +356,25 @@ const ResetPassword = () => {
                 <span className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or
-                </span>
+                <span className="bg-background px-2 text-muted-foreground">Or</span>
               </div>
             </div>
 
             <p className="text-muted-foreground">
               Remember your password?{" "}
-              <Link
-                to="/login"
-                className="text-primary hover:underline font-semibold"
-              >
+              <Link to="/login" className="text-primary hover:underline font-semibold">
                 Sign in
               </Link>
             </p>
           </motion.div>
 
-          {/* Back Button */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
             className="pt-4"
           >
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/forgot-password")}
-              className="w-full text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Verification
-            </Button>
+            
           </motion.div>
         </div>
       </motion.div>

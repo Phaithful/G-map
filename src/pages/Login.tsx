@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, ArrowLeft, MapPin } from "lucide-react";
+import { Eye, EyeOff, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,11 +13,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { saveAuth } from "@/lib/auth";
 
 interface LoginFormData {
   email: string;
   password: string;
 }
+
+// ✅ Change this later when you deploy your backend
+const API_BASE = "http://127.0.0.1:8000";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -32,13 +36,56 @@ const Login = () => {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log("Login data:", data);
-    setIsLoading(false);
-    // For now, just navigate to home
-    navigate("/");
+    try {
+      setIsLoading(true);
+      form.clearErrors();
+
+      const payload = {
+        email: data.email.trim().toLowerCase(),
+        password: data.password,
+      };
+
+      const res = await fetch(`${API_BASE}/api/auth/login/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        const msg =
+          json?.error ||
+          json?.detail ||
+          "Login failed. Please check your details and try again.";
+
+        form.setError("email", { message: msg });
+        return;
+      }
+
+      // ✅ expects backend returns { access, refresh, user }
+      if (!json?.access || !json?.user) {
+        form.setError("email", {
+          message:
+            "Login response is missing user data. Check your backend login response.",
+        });
+        return;
+      }
+
+      saveAuth({
+        access: json.access,
+        refresh: json.refresh,
+        user: json.user,
+      });
+
+      navigate("/");
+    } catch {
+      form.setError("email", {
+        message: "Network error. Please check your connection and try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -254,7 +301,7 @@ const Login = () => {
             </div>
 
             <p className="text-muted-foreground">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link
                 to="/signup"
                 className="text-primary hover:underline font-semibold"
@@ -262,23 +309,6 @@ const Login = () => {
                 Create one
               </Link>
             </p>
-          </motion.div>
-
-          {/* Back Button */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
-            className="pt-4"
-          >
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/")}
-              className="w-full text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Map
-            </Button>
           </motion.div>
         </div>
       </motion.div>
