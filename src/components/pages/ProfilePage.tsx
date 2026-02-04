@@ -1,6 +1,5 @@
 import {
   ArrowLeft,
-  User,
   Heart,
   Settings,
   HelpCircle,
@@ -17,46 +16,53 @@ interface ProfilePageProps {
   savedCount?: number;
 }
 
+type StoredUser = {
+  id?: number;
+  name?: string;
+  email?: string;
+  is_verified?: boolean;
+};
+
+function readStoredUser(): StoredUser | null {
+  const raw = localStorage.getItem("user");
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as StoredUser;
+  } catch {
+    return null;
+  }
+}
+
 const ProfilePage = ({
   onBack,
   onNavigate,
   savedCount = 5,
 }: ProfilePageProps) => {
   const [userName, setUserName] = useState("Guest User");
+  const [userEmail, setUserEmail] = useState("guest@gou.edu.ng");
   const [profileImage, setProfileImage] = useState("/images/profile_icon.png");
 
-  // Load user data on mount and when returning from edit
   useEffect(() => {
     const loadUserData = () => {
-      const savedName = localStorage.getItem("userName");
-      const savedImage = localStorage.getItem("profileImage");
+      const u = readStoredUser();
 
-      if (savedName && savedName.trim() !== "") {
-        setUserName(savedName);
-      } else {
-        setUserName("Guest User");
-      }
-      if (savedImage && savedImage.trim() !== "") {
-        setProfileImage(savedImage);
-      } else {
-        setProfileImage("/images/profile_icon.png");
-      }
+      setUserName(u?.name?.trim() ? u.name : "Guest User");
+      setUserEmail(u?.email?.trim() ? u.email : "guest@gou.edu.ng");
+
+      const savedImage = localStorage.getItem("profileImage");
+      setProfileImage(
+        savedImage && savedImage.trim() !== ""
+          ? savedImage
+          : "/images/profile_icon.png",
+      );
     };
 
     loadUserData();
 
-    // Listen for custom event when user data changes
-    const handleUserDataChanged = () => {
-      loadUserData();
-    };
+    const handleUserDataChanged = () => loadUserData();
+    const handleStorageChange = () => loadUserData();
 
     window.addEventListener("userDataChanged", handleUserDataChanged);
-
-    // Also listen for storage changes (in case edited from another tab)
-    const handleStorageChange = () => {
-      loadUserData();
-    };
-
     window.addEventListener("storage", handleStorageChange);
 
     return () => {
@@ -77,7 +83,6 @@ const ProfilePage = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 bg-white dark:bg-background overflow-y-auto"
-
     >
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-border">
@@ -94,13 +99,14 @@ const ProfilePage = ({
       <div className="p-6 flex flex-col items-center border-b border-border">
         <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-4 border-primary/20">
           <img
-            src="/images/profile_icon.png"
+            src={profileImage}
             alt="Profile"
             className="w-full h-full object-cover"
           />
         </div>
-        <h2 className="text-xl font-bold">Guest User</h2>
-        <p className="text-muted-foreground">Campus Explorer</p>
+
+        <h2 className="text-xl font-bold">{userName}</h2>
+        <p className="text-muted-foreground text-sm">{userEmail}</p>
 
         {/* Stats */}
         <div className="flex gap-8 mt-6">

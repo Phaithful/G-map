@@ -17,40 +17,55 @@ interface HamburgerMenuProps {
   onNavigate?: (page: string) => void;
 }
 
+type StoredUser = {
+  id?: number;
+  name?: string;
+  email?: string;
+  is_verified?: boolean;
+};
+
+function readStoredUser(): StoredUser | null {
+  const raw = localStorage.getItem("user");
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as StoredUser;
+  } catch {
+    return null;
+  }
+}
+
 const HamburgerMenu = ({ onNavigate }: HamburgerMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [userName, setUserName] = useState("Guest User");
+  const [userEmail, setUserEmail] = useState("Campus Explorer");
   const [profileImage, setProfileImage] = useState("/images/profile_icon.png");
 
-  // Load user data on mount
   useEffect(() => {
     const loadUserData = () => {
-      const savedName = localStorage.getItem("userName");
-      const savedImage = localStorage.getItem("profileImage");
+      const u = readStoredUser();
 
-      if (savedName && savedName.trim() !== "") {
-        setUserName(savedName);
-      } else {
-        setUserName("Guest User");
-      }
-      if (savedImage && savedImage.trim() !== "") {
-        setProfileImage(savedImage);
-      } else {
-        setProfileImage("/images/profile_icon.png");
-      }
+      if (u?.name?.trim()) setUserName(u.name);
+      else setUserName("Guest User");
+
+      if (u?.email?.trim()) setUserEmail(u.email);
+      else setUserEmail("Campus Explorer");
+
+      const savedImage = localStorage.getItem("profileImage");
+      if (savedImage && savedImage.trim() !== "") setProfileImage(savedImage);
+      else setProfileImage("/images/profile_icon.png");
     };
 
     loadUserData();
 
-    // Listen for custom event when user data changes
-    const handleUserDataChanged = () => {
-      loadUserData();
-    };
+    const handleUserDataChanged = () => loadUserData();
+    const handleStorageChange = () => loadUserData();
 
     window.addEventListener("userDataChanged", handleUserDataChanged);
+    window.addEventListener("storage", handleStorageChange);
 
     return () => {
       window.removeEventListener("userDataChanged", handleUserDataChanged);
+      window.removeEventListener("storage", handleStorageChange);
     };
   }, []);
 
@@ -122,9 +137,7 @@ const HamburgerMenu = ({ onNavigate }: HamburgerMenuProps) => {
                   </div>
                   <div>
                     <h3 className="font-semibold">{userName}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Campus Explorer
-                    </p>
+                    <p className="text-sm text-muted-foreground">{userEmail}</p>
                   </div>
                 </div>
               </div>
@@ -141,14 +154,9 @@ const HamburgerMenu = ({ onNavigate }: HamburgerMenuProps) => {
                     className="menu-item w-full flex items-center gap-3"
                   >
                     <item.icon className="w-5 h-5 text-muted-foreground" />
-
-                    <span className="flex-1 text-left">
-                      {item.label}
-                    </span>
-
+                    <span className="flex-1 text-left">{item.label}</span>
                     <ChevronRight className="w-5 h-5 text-muted-foreground" />
                   </motion.button>
-
                 ))}
               </div>
 
