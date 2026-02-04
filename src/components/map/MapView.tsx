@@ -22,6 +22,11 @@ interface MapViewProps {
   locations?: Location[];
   selectedLocation?: Location | null;
   onPinClick?: (location: Location) => void;
+  userLocation?: {
+    lat: number;
+    lng: number;
+  } | null;
+  heading?: number | null;
 }
 
 // ------------------------
