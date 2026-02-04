@@ -124,11 +124,11 @@ export const campusLocations: Location[] = [
     openingHours: "Everyday: 6AM-6PM"
   },
 
-  // Food & Retail
+  // food & shops
   {
     id: "13",
     name: "7G Upgraded",
-    category: "Retail",
+    category: "shops",
     lat: 6.470324,
     lng: 7.526517,
     distance: "4 min",
@@ -137,7 +137,7 @@ export const campusLocations: Location[] = [
   {
     id: "14",
     name: "Amazing Restuarant",
-    category: "Food",
+    category: "food",
     lat: 6.469587,
     lng: 7.526737,
     distance: "2 min",
@@ -147,7 +147,7 @@ export const campusLocations: Location[] = [
   {
     id: "15",
     name: "Back Gate Rice",
-    category: "Food",
+    category: "food",
     lat: 6.470014,
     lng: 7.526987,
     distance: "5 min",
@@ -157,7 +157,7 @@ export const campusLocations: Location[] = [
   {
     id: "16",
     name: "Bask Now Beauty Stores 1",
-    category: "Retail",
+    category: "shops",
     lat: 6.471336,
     lng: 7.526164,
     distance: "3 min",
@@ -167,7 +167,7 @@ export const campusLocations: Location[] = [
   {
     id: "17",
     name: "Bask Now Beauty Stores 2",
-    category: "Retail",
+    category: "shops",
     lat: 6.471584,
     lng: 7.526282,
     distance: "3 min",
@@ -177,7 +177,7 @@ export const campusLocations: Location[] = [
   {
     id: "18",
     name: "BBLondon Hair Beauty Salon",
-    category: "Retail",
+    category: "shops",
     lat: 6.471368,
     lng: 7.526206,
     distance: "4 min",
@@ -187,7 +187,7 @@ export const campusLocations: Location[] = [
   {
     id: "19",
     name: "Blessing Hair Salon",
-    category: "Retail",
+    category: "shops",
     lat: 6.470102,
     lng: 7.526552,
     distance: "6 min",
@@ -197,7 +197,7 @@ export const campusLocations: Location[] = [
   {
     id: "20",
     name: "Blue Container",
-    category: "Food",
+    category: "food",
     lat: 6.469769,
     lng: 7.526522,
     distance: "7 min",
@@ -207,7 +207,7 @@ export const campusLocations: Location[] = [
   {
     id: "21",
     name: "Bunker Unisex Boutique",
-    category: "Retail",
+    category: "shops",
     lat: 6.471907,
     lng: 7.523837,
     distance: "5 min",
@@ -217,7 +217,7 @@ export const campusLocations: Location[] = [
   {
     id: "22",
     name: "Calis Alumni Restaurant",
-    category: "Food",
+    category: "food",
     lat: 6.470963,
     lng: 7.526563,
     distance: "4 min",
@@ -227,7 +227,7 @@ export const campusLocations: Location[] = [
   {
     id: "23",
     name: "Chemeal World Kitchen & Pastries",
-    category: "Food",
+    category: "food",
     lat: 6.471560,
     lng: 7.526672,
     distance: "6 min",
@@ -237,7 +237,7 @@ export const campusLocations: Location[] = [
   {
     id: "24",
     name: "Chinelo's Eatry",
-    category: "Food",
+    category: "food",
     lat: 6.469422,
     lng: 7.525217,
     distance: "3 min",
@@ -247,7 +247,7 @@ export const campusLocations: Location[] = [
   {
     id: "25",
     name: "Chisom Kitchen",
-    category: "Food",
+    category: "food",
     lat: 6.469405,
     lng: 7.525221,
     distance: "4 min",
@@ -257,7 +257,7 @@ export const campusLocations: Location[] = [
   {
     id: "26",
     name: "Computer Science Calis Restaurants",
-    category: "Food",
+    category: "food",
     lat: 6.468774,
     lng: 7.525787,
     distance: "5 min",
@@ -267,7 +267,7 @@ export const campusLocations: Location[] = [
   {
     id: "27",
     name: "Computer Science Canteen",
-    category: "Food",
+    category: "food",
     lat: 6.468795,
     lng: 7.525816,
     distance: "5 min",
@@ -277,7 +277,7 @@ export const campusLocations: Location[] = [
   {
     id: "28",
     name: "Crispy",
-    category: "Food",
+    category: "food",
     lat: 6.471368,
     lng: 7.526221,
     distance: "4 min",
@@ -287,7 +287,7 @@ export const campusLocations: Location[] = [
   {
     id: "29",
     name: "Cyrifex Pharmacy",
-    category: "Retail",
+    category: "shops",
     lat: 6.470009,
     lng: 7.52698,
     distance: "5min",
@@ -297,7 +297,7 @@ export const campusLocations: Location[] = [
   {
     id: "30",
     name: "De Grace Multi-Link",
-    category: "Retail",
+    category: "shops",
     lat: 6.471166,
     lng: 7.524341,
     distance: "6 min",
@@ -307,7 +307,7 @@ export const campusLocations: Location[] = [
   {
     id: "31",
     name: "De Grace Unisex Salon",
-    category: "Retail",
+    category: "shops",
     lat: 6.471174,
     lng: 7.524352,
     distance: "6 min",
@@ -317,7 +317,7 @@ export const campusLocations: Location[] = [
   {
     id: "32",
     name: "Debbie Accessories Beauty Shop",
-    category: "Retail",
+    category: "shops",
     lat: 6.470246,
     lng: 7.526972,
     distance: "4 min",
@@ -327,7 +327,7 @@ export const campusLocations: Location[] = [
   {
     id: "33",
     name: "Divine Favour Inn",
-    category: "Food",
+    category: "food",
     lat: 6.469080,
     lng: 7.526689,
     distance: "5 min",
@@ -337,7 +337,7 @@ export const campusLocations: Location[] = [
   {
     id: "34",
     name: "Divine Miraculous Refreshments",
-    category: "Food",
+    category: "food",
     lat: 6.469611,
     lng: 7.526499,
     distance: "3 min",
@@ -347,7 +347,7 @@ export const campusLocations: Location[] = [
   {
     id: "35",
     name: "Don.V Dreadlocks Hair Salon",
-    category: "Retail",
+    category: "shops",
     lat: 6.471252,
     lng: 7.526379,
     distance: "6 min",
@@ -357,7 +357,7 @@ export const campusLocations: Location[] = [
   {
     id: "36",
     name: "Eastgate Mini Supermarket 1",
-    category: "Retail",
+    category: "shops",
     lat: 6.471639,
     lng: 7.526197,
     distance: "4 min",
@@ -367,7 +367,7 @@ export const campusLocations: Location[] = [
   {
     id: "37",
     name: "Eastgate Mini Supermarket 2",
-    category: "Retail",
+    category: "shops",
     lat: 6.471507,
     lng: 7.526200,
     distance: "4 min",
@@ -377,7 +377,7 @@ export const campusLocations: Location[] = [
   {
     id: "38",
     name: "Ebonyi Joint",
-    category: "Food",
+    category: "food",
     lat: 6.471807,
     lng: 7.526477,
     distance: "3 min",
@@ -387,7 +387,7 @@ export const campusLocations: Location[] = [
   {
     id: "39",
     name: "Erimeri",
-    category: "Food",
+    category: "food",
     lat: 6.471285,
     lng: 7.526314,
     distance: "3 min",
@@ -397,7 +397,7 @@ export const campusLocations: Location[] = [
   {
     id: "40",
     name: "Family Table Catering Services",
-    category: "Food",
+    category: "food",
     lat: 6.471657,
     lng: 7.527277,
     distance: "3 min",
@@ -407,37 +407,37 @@ export const campusLocations: Location[] = [
   {
     id: "41",
     name: "Fancy Stores",
-    category: "Retail",
+    category: "shops",
     lat: 6.469883,
     lng: 7.525889,
     distance: "4 min",
-    description: "Retail Store",
+    description: "shops Store",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "42",
     name: "Favour Shop",
-    category: "Retail",
+    category: "shops",
     lat: 6.470115,
     lng: 7.527027,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "43",
-    name: "Foodee",
-    category: "Food",
+    name: "foodee",
+    category: "food",
     lat: 6.468868,
     lng: 7.525917,
     distance: "3 min",
-    description: "Foodee Eatry",
+    description: "foodee Eatry",
     openingHours: "Mon-Sun: 8AM-8PM"
   },
   {
     id: "44",
     name: "Front Gate Rice",
-    category: "Food",
+    category: "food",
     lat: 6.4768868,
     lng: 7.525917,
     distance: "5 min",
@@ -447,7 +447,7 @@ export const campusLocations: Location[] = [
   {
     id: "45",
     name: "God Bless You Collections",
-    category: "Retail",
+    category: "shops",
     lat: 6.471701,
     lng: 7.526808,
     distance: "4 min",
@@ -457,7 +457,7 @@ export const campusLocations: Location[] = [
   {
     id: "46",
     name: "God's Gift Shop",
-    category: "Retail",
+    category: "shops",
     lat: 6.471967,
     lng: 7.527383,
     distance: "4 min",
@@ -467,7 +467,7 @@ export const campusLocations: Location[] = [
   {
     id: "47",
     name: "God's Own Tailor Shop",
-    category: "Retail",
+    category: "shops",
     lat: 6.471359,
     lng: 7.526193,
     distance: "5 min",
@@ -477,7 +477,7 @@ export const campusLocations: Location[] = [
   {
     id: "48",
     name: "GOU Bookshop",
-    category: "Retail",
+    category: "shops",
     lat: 6.469162,
     lng: 7.526649,
     distance: "4 min",
@@ -487,7 +487,7 @@ export const campusLocations: Location[] = [
   {
     id: "49",
     name: "Ify Love Salon",
-    category: "Retail",
+    category: "shops",
     lat: 6.471355,
     lng: 7.526252,
     distance: "5 min",
@@ -497,7 +497,7 @@ export const campusLocations: Location[] = [
   {
     id: "50",
     name: "Jenny's Boutique",
-    category: "Retail",
+    category: "shops",
     lat: 6.471369,
     lng: 7.526363,
     distance: "5 min",
@@ -507,17 +507,17 @@ export const campusLocations: Location[] = [
   {
     id: "51",
     name: "Johnbosco's Shop",
-    category: "Retail",
+    category: "shops",
     lat: 6.471345,
     lng: 7.526837,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "52",
     name: "Joy Jewelry",
-    category: "Retail",
+    category: "shops",
     lat: 6.468979,
     lng: 7.525837,
     distance: "4 min",
@@ -526,8 +526,8 @@ export const campusLocations: Location[] = [
   },
   {
     id: "53",
-    name: "Kay's Food Town",
-    category: "Food",
+    name: "Kay's food Town",
+    category: "food",
     lat: 6.471926,
     lng: 7.527256,
     distance: "3 min",
@@ -537,27 +537,27 @@ export const campusLocations: Location[] = [
   {
     id: "54",
     name: "Love's Shop",
-    category: "Retail",
+    category: "shops",
     lat: 6.465668,
     lng: 7.526558,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "55",
     name: "Lucasino Stores",
-    category: "Retail",
+    category: "shops",
     lat: 6.471460,
     lng: 7.526222,
     distance: "4 min",
-    description: "Retail Store",
+    description: "shops Store",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "56",
     name: "Mama Airtel Shop",
-    category: "Retail",
+    category: "shops",
     lat: 6.471417,
     lng: 7.524775,
     distance: "5 min",
@@ -567,7 +567,7 @@ export const campusLocations: Location[] = [
   {
     id: "57",
     name: "Mama Chikamso Beans & Plantain",
-    category: "Food",
+    category: "food",
     lat: 6.470995,
     lng: 7.526554,
     distance: "4 min",
@@ -577,7 +577,7 @@ export const campusLocations: Location[] = [
   {
     id: "58",
     name: "Mama Emeka Beans & Plantain",
-    category: "Food",
+    category: "food",
     lat: 6.471497,
     lng: 7.527245,
     distance: "4 min",
@@ -587,37 +587,37 @@ export const campusLocations: Location[] = [
   {
     id: "59",
     name: "Marky Biz Enterprize",
-    category: "Retail",
+    category: "shops",
     lat: 6.471131,
     lng: 7.525817,
     distance: "5 min",
-    description: "Retail Store",
+    description: "shops Store",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "60",
     name: "Mayflair",
-    category: "Retail",
+    category: "shops",
     lat: 6.471124,
     lng: 7.526277,
     distance: "4 min",
-    description: "Retail Store",
+    description: "shops Store",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "61",
     name: "Modesta Shop",
-    category: "Retail",
+    category: "shops",
     lat: 6.469392,
     lng: 7.525421,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "62",
     name: "Mummy Faith Kitchen",
-    category: "Retail",
+    category: "shops",
     lat: 6.470502,
     lng: 7.525808,
     distance: "5 min",
@@ -627,17 +627,17 @@ export const campusLocations: Location[] = [
   {
     id: "63",
     name: "Mummy Zitel Shop",
-    category: "Retail",
+    category: "shops",
     lat: 6.471130,
     lng: 7.526246,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "64",
     name: "Nadico Tech Ventures",
-    category: "Retail",
+    category: "shops",
     lat: 6.471588,
     lng: 7.524629,
     distance: "5 min",
@@ -647,7 +647,7 @@ export const campusLocations: Location[] = [
   {
     id: "65",
     name: "Nwanyi Akara",
-    category: "Food",
+    category: "food",
     lat: 6.471455,
     lng: 7.526907,
     distance: "4 min",
@@ -657,7 +657,7 @@ export const campusLocations: Location[] = [
   {
     id: "66",
     name: "Nwanyi Di Beans & Plantain",
-    category: "Food",
+    category: "food",
     lat: 6.469107,
     lng: 7.526604,
     distance: "4 min",
@@ -667,47 +667,47 @@ export const campusLocations: Location[] = [
   {
     id: "67",
     name: "Ojels",
-    category: "Retail",
+    category: "shops",
     lat: 6.472034,
     lng: 7.526372,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "68",
     name: "Okoye Magrette Provision Shop",
-    category: "Retail",
+    category: "shops",
     lat: 6.471322,
     lng: 7.526345,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "69",
     name: "Plaza 1",
-    category: "Retail",
+    category: "shops",
     lat: 6.471728,
     lng: 7.526787,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "70",
     name: "Plaza 2",
-    category: "Retail",
+    category: "shops",
     lat: 6.471671,
     lng: 7.526532,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "71",
     name: "Plaza 3",
-    category: "Retail",
+    category: "shops",
     lat: 6.471788,
     lng: 7.526749,
     distance: "4 min",
@@ -717,27 +717,27 @@ export const campusLocations: Location[] = [
   {
     id: "72",
     name: "Plaza 4",
-    category: "Retail",
+    category: "shops",
     lat: 6.471952,
     lng: 7.527232,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "73",
     name: "Restpoint Exclusive",
-    category: "Retail",
+    category: "shops",
     lat: 6.471563,
     lng: 7.526944,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "74",
     name: "Rice & Ofeakwu",
-    category: "Food",
+    category: "food",
     lat: 6.468974,
     lng: 7.525594,
     distance: "4 min",
@@ -747,7 +747,7 @@ export const campusLocations: Location[] = [
   {
     id: "75",
     name: "Richard's Friut Salad",
-    category: "Food",
+    category: "food",
     lat: 6.471645,
     lng: 7.526118,
     distance: "4 min",
@@ -757,7 +757,7 @@ export const campusLocations: Location[] = [
   {
     id: "76",
     name: "Rosie Stores",
-    category: "Retail",
+    category: "shops",
     lat: 6.471913,
     lng: 7.527064,
     distance: "5 min",
@@ -767,7 +767,7 @@ export const campusLocations: Location[] = [
   {
     id: "77",
     name: "St Anothy Shop",
-    category: "Retail",
+    category: "shops",
     lat: 6.469953,
     lng: 7.527059,
     distance: "5 min",
@@ -777,17 +777,17 @@ export const campusLocations: Location[] = [
   {
     id: "78",
     name: "Stankrystal Hair Salon",
-    category: "Retail",
+    category: "shops",
     lat: 6.471467,
     lng: 7.526232,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "79",
     name: "Testimony Groceries Stores",
-    category: "Retail",
+    category: "shops",
     lat: 6.471745,
     lng: 7.526541,
     distance: "4 min",
@@ -797,17 +797,17 @@ export const campusLocations: Location[] = [
   {
     id: "80",
     name: "Vicky Empire",
-    category: "Retail",
+    category: "shops",
     lat: 6.471263,
     lng: 7.524212,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "81",
     name: "Visa Shop",
-    category: "Retail",
+    category: "shops",
     lat: 6.473112,
     lng: 7.526323,
     distance: "4 min",
@@ -817,11 +817,11 @@ export const campusLocations: Location[] = [
   {
     id: "82",
     name: "Zika's Mix-Up",
-    category: "Food",
+    category: "food",
     lat: 6.470026,
     lng: 7.527137,
     distance: "4 min",
-    description: "Food",
+    description: "food",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
 ];
