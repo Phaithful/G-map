@@ -14,3 +14,4 @@ def send_reset_otp_email(to_email: str, code: str):
     subject = "G-Map password reset code"
     message = f"Your password reset code is: {code}\n\nThis code expires in 10 minutes."
     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [to_email], fail_silently=False)
+
