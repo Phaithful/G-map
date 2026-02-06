@@ -63,11 +63,7 @@ const getCategoryColor = (category: string) => {
 // ------------------------
 // MapView Component
 // ------------------------
-const MapView = ({
-  locations = [],
-  selectedLocation,
-  onPinClick,
-}: MapViewProps) => {
+const MapView = ({ locations = [], selectedLocation, onPinClick }: MapViewProps) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -92,11 +88,6 @@ const MapView = ({
     // UX polish
     map.dragRotate.disable();
     map.touchZoomRotate.disableRotation();
-   
-
-    map.on("load", () => {
-      geolocate.trigger(); // 👈 THIS is what you were missing
-    });
 
     // ------------------------
     // STANDARD GEOLOCATE CONTROL
@@ -105,15 +96,21 @@ const MapView = ({
       positionOptions: {
         enableHighAccuracy: true,
       },
-      trackUserLocation: true,   // live updates
-      showUserHeading: true,     // arrow direction
-      showAccuracyCircle: true,  // GPS uncertainty
+      trackUserLocation: true, // live updates
+      showUserHeading: true, // arrow direction
+      showAccuracyCircle: true, // GPS uncertainty
       fitBoundsOptions: {
         maxZoom: 18,
       },
     });
 
-    map.addControl(geolocate, "top-right");
+    // ✅ Move control to top-left (we’ll offset it down in CSS)
+    map.addControl(geolocate, "top-left");
+
+    // Auto-trigger once map is ready
+    map.on("load", () => {
+      geolocate.trigger();
+    });
 
     // Apply campus bounds AFTER valid location is received
     geolocate.on("geolocate", (e) => {
@@ -167,9 +164,7 @@ const MapView = ({
       el.style.cursor = "pointer";
       el.style.boxShadow = "0 4px 10px rgba(0,0,0,0.3)";
 
-      el.innerHTML = renderToStaticMarkup(
-        <Icon size={16} color="white" />
-      );
+      el.innerHTML = renderToStaticMarkup(<Icon size={16} color="white" />);
 
       el.onclick = () => onPinClick?.(location);
 
@@ -179,13 +174,13 @@ const MapView = ({
 
       markersRef.current.push(marker);
     });
-  }, [locations, selectedLocation]);
+  }, [locations, selectedLocation, onPinClick]);
 
   // ------------------------
   // Render
   // ------------------------
   return (
-    <div className="absolute inset-0">
+    <div className="absolute inset-0 gmap">
       <div ref={mapContainerRef} className="w-full h-full" />
     </div>
   );

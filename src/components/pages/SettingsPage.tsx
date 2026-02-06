@@ -1,4 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+// src/components/pages/SettingsPage.tsx
+
+import { useState, useRef, useEffect, type ChangeEvent } from "react";
 import {
   ArrowLeft,
   Camera,
@@ -51,7 +53,7 @@ function writeStoredUser(next: StoredUser) {
 }
 
 const SettingsPage = ({ onBack }: SettingsPageProps) => {
-  // Profile states
+  // Profile
   const [profileImage, setProfileImage] = useState<string>(
     "/images/profile_icon.png",
   );
@@ -62,7 +64,7 @@ const SettingsPage = ({ onBack }: SettingsPageProps) => {
   const [userEmail, setUserEmail] = useState("guest@gou.edu.ng");
   const [userPhone, setUserPhone] = useState("");
 
-  // App preferences states
+  // Preferences
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
   const [locationServices, setLocationServices] = useState(true);
@@ -73,25 +75,25 @@ const SettingsPage = ({ onBack }: SettingsPageProps) => {
 
   useEffect(() => {
     const loadSettings = () => {
-      // ✅ user from auth storage
+      // ✅ Load from auth storage (localStorage.user)
       const u = readStoredUser();
       setUserName(u?.name?.trim() ? u.name : "Guest User");
       setUserEmail(u?.email?.trim() ? u.email : "guest@gou.edu.ng");
 
-      // Profile extras
+      // Extras (image + phone)
       const savedImage = localStorage.getItem("profileImage");
       const savedPhone = localStorage.getItem("userPhone");
 
-      if (savedImage && savedImage.trim() !== "") setProfileImage(savedImage);
-      else setProfileImage("/images/profile_icon.png");
+      setProfileImage(
+        savedImage && savedImage.trim() !== ""
+          ? savedImage
+          : "/images/profile_icon.png",
+      );
+      setUserPhone(savedPhone && savedPhone.trim() !== "" ? savedPhone : "");
 
-      if (savedPhone && savedPhone.trim() !== "") setUserPhone(savedPhone);
-      else setUserPhone("");
-
-      // App preferences
+      // Preferences
       const savedDarkMode = localStorage.getItem("darkMode") === "true";
-      const savedNotifications =
-        localStorage.getItem("notifications") !== "false";
+      const savedNotifications = localStorage.getItem("notifications") !== "false";
       const savedLocationServices =
         localStorage.getItem("locationServices") !== "false";
       const savedLanguage = localStorage.getItem("language") || "en";
@@ -101,6 +103,7 @@ const SettingsPage = ({ onBack }: SettingsPageProps) => {
       setLocationServices(savedLocationServices);
       setLanguage(savedLanguage);
 
+      // Apply dark mode immediately
       if (savedDarkMode) document.documentElement.classList.add("dark");
       else document.documentElement.classList.remove("dark");
     };
@@ -119,23 +122,23 @@ const SettingsPage = ({ onBack }: SettingsPageProps) => {
     };
   }, []);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        alert("Please select an image file");
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        alert("File size must be less than 5MB");
-        return;
-      }
+    if (!file) return;
 
-      setSelectedFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => setPreviewImage(e.target?.result as string);
-      reader.readAsDataURL(file);
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file");
+      return;
     }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size must be less than 5MB");
+      return;
+    }
+
+    setSelectedFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setPreviewImage(e.target?.result as string);
+    reader.readAsDataURL(file);
   };
 
   const handleCancelImage = () => {
@@ -160,9 +163,13 @@ const SettingsPage = ({ onBack }: SettingsPageProps) => {
       if (finalImage && finalImage !== "/images/profile_icon.png") {
         localStorage.setItem("profileImage", finalImage);
         setProfileImage(finalImage);
+      } else {
+        // keep default clean
+        localStorage.removeItem("profileImage");
+        setProfileImage("/images/profile_icon.png");
       }
 
-      // ✅ Update AUTH user object (this is the important fix)
+      // ✅ Update auth user object (so Menu/Profile/Index can show it)
       const currentUser = readStoredUser() || {};
       writeStoredUser({
         ...currentUser,
@@ -170,14 +177,15 @@ const SettingsPage = ({ onBack }: SettingsPageProps) => {
         email: userEmail?.trim() ? userEmail.trim() : currentUser.email,
       });
 
-      // Save phone separately (since backend user may not have phone field)
+      // Phone stored separately (backend user may not have phone)
       if (userPhone && userPhone.trim() !== "") {
         localStorage.setItem("userPhone", userPhone.trim());
       } else {
         localStorage.removeItem("userPhone");
       }
 
-      // Save app preferences
+      // ✅ Save preferences
+      localStorage.setItem("darkMode", isDarkMode.toString());
       localStorage.setItem("notifications", notifications.toString());
       localStorage.setItem("locationServices", locationServices.toString());
       localStorage.setItem("language", language);
@@ -185,7 +193,7 @@ const SettingsPage = ({ onBack }: SettingsPageProps) => {
       setSelectedFile(null);
       setPreviewImage(null);
 
-      // ✅ Tell menu/profile to refresh
+      // ✅ Tell menu/profile to refresh immediately
       window.dispatchEvent(new CustomEvent("userDataChanged"));
 
       alert("Settings saved successfully!");
@@ -218,13 +226,12 @@ const SettingsPage = ({ onBack }: SettingsPageProps) => {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {/* Profile Section */}
+        {/* Profile */}
         <div className="p-6">
           <h3 className="text-sm font-medium text-muted-foreground mb-4 px-2">
             Profile
           </h3>
 
-          {/* Profile Picture */}
           <div className="flex flex-col items-center space-y-4 mb-6">
             <div className="relative">
               <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-primary/20">
@@ -234,6 +241,7 @@ const SettingsPage = ({ onBack }: SettingsPageProps) => {
                   className="w-full h-full object-cover"
                 />
               </div>
+
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="absolute bottom-0 right-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground shadow-lg hover:bg-primary/90 transition-colors"
@@ -266,7 +274,6 @@ const SettingsPage = ({ onBack }: SettingsPageProps) => {
             )}
           </div>
 
-          {/* Profile Information */}
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
@@ -308,7 +315,7 @@ const SettingsPage = ({ onBack }: SettingsPageProps) => {
 
         <Separator />
 
-        {/* Appearance Section */}
+        {/* Appearance */}
         <div className="p-6">
           <h3 className="text-sm font-medium text-muted-foreground mb-4 px-2">
             Appearance
@@ -408,7 +415,7 @@ const SettingsPage = ({ onBack }: SettingsPageProps) => {
 
         <Separator />
 
-        {/* Account Information */}
+        {/* Account Info */}
         <div className="p-6">
           <h3 className="text-sm font-medium text-muted-foreground mb-4 px-2">
             Account Information
@@ -437,7 +444,7 @@ const SettingsPage = ({ onBack }: SettingsPageProps) => {
           </div>
         </div>
 
-        {/* Save Button */}
+        {/* Save */}
         <div className="p-6 border-t border-border">
           <Button
             onClick={handleSaveSettings}
@@ -455,7 +462,7 @@ const SettingsPage = ({ onBack }: SettingsPageProps) => {
           </Button>
         </div>
 
-        {/* Version Info */}
+        {/* Version */}
         <div className="p-6 border-t border-border">
           <div className="text-center">
             <p className="text-xs text-muted-foreground">G-Map v1.0.0</p>

@@ -1,73 +1,23 @@
+// components/map/HamburgerMenu.tsx
 import {
-  Menu,
-  X,
-  User,
-  Heart,
-  Settings,
-  HelpCircle,
-  Info,
-  LogOut,
-  ChevronRight,
-  Share2,
+  Menu, X, User, Heart, Settings, HelpCircle, Info, LogOut, ChevronRight, Share2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useAuthUser } from "@/hooks/useAuthUser";
 
 interface HamburgerMenuProps {
   onNavigate?: (page: string) => void;
 }
 
-type StoredUser = {
-  id?: number;
-  name?: string;
-  email?: string;
-  is_verified?: boolean;
-};
-
-function readStoredUser(): StoredUser | null {
-  const raw = localStorage.getItem("user");
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as StoredUser;
-  } catch {
-    return null;
-  }
-}
-
 const HamburgerMenu = ({ onNavigate }: HamburgerMenuProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [userName, setUserName] = useState("Guest User");
-  const [userEmail, setUserEmail] = useState("Campus Explorer");
-  const [profileImage, setProfileImage] = useState("/images/profile_icon.png");
 
-  useEffect(() => {
-    const loadUserData = () => {
-      const u = readStoredUser();
+  const { user, isAuthenticated, logout } = useAuthUser();
 
-      if (u?.name?.trim()) setUserName(u.name);
-      else setUserName("Guest User");
-
-      if (u?.email?.trim()) setUserEmail(u.email);
-      else setUserEmail("Campus Explorer");
-
-      const savedImage = localStorage.getItem("profileImage");
-      if (savedImage && savedImage.trim() !== "") setProfileImage(savedImage);
-      else setProfileImage("/images/profile_icon.png");
-    };
-
-    loadUserData();
-
-    const handleUserDataChanged = () => loadUserData();
-    const handleStorageChange = () => loadUserData();
-
-    window.addEventListener("userDataChanged", handleUserDataChanged);
-    window.addEventListener("storage", handleStorageChange);
-
-    return () => {
-      window.removeEventListener("userDataChanged", handleUserDataChanged);
-      window.removeEventListener("storage", handleStorageChange);
-    };
-  }, []);
+  const displayName = isAuthenticated && user?.name ? user.name : "Guest User";
+  const displayEmail = isAuthenticated && user?.email ? user.email : "Campus Explorer";
+  const profileImage = localStorage.getItem("profileImage") || "/images/profile_icon.png";
 
   const menuItems = [
     { id: "profile", label: "Profile", icon: User },
@@ -79,13 +29,18 @@ const HamburgerMenu = ({ onNavigate }: HamburgerMenuProps) => {
   ];
 
   const handleItemClick = (id: string) => {
+    if (id === "logout") {
+      logout();
+      onNavigate?.("logout");
+      setIsOpen(false);
+      return;
+    }
     onNavigate?.(id);
     setIsOpen(false);
   };
 
   return (
     <>
-      {/* Menu button */}
       <button
         onClick={() => setIsOpen(true)}
         className="fixed top-4 right-4 z-40 floating-button"
@@ -94,7 +49,6 @@ const HamburgerMenu = ({ onNavigate }: HamburgerMenuProps) => {
         <Menu className="w-5 h-5" />
       </button>
 
-      {/* Overlay */}
       <AnimatePresence>
         {isOpen && (
           <>
@@ -106,7 +60,6 @@ const HamburgerMenu = ({ onNavigate }: HamburgerMenuProps) => {
               className="fixed inset-0 z-[99] bg-black/50"
             />
 
-            {/* Menu panel */}
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}
@@ -114,7 +67,6 @@ const HamburgerMenu = ({ onNavigate }: HamburgerMenuProps) => {
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
               className="fixed top-0 right-0 bottom-0 w-80 z-[100] bg-card shadow-xl"
             >
-              {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-border">
                 <h2 className="text-lg font-semibold">Menu</h2>
                 <button
@@ -125,24 +77,18 @@ const HamburgerMenu = ({ onNavigate }: HamburgerMenuProps) => {
                 </button>
               </div>
 
-              {/* User card */}
               <div className="p-4 border-b border-border">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-primary/20">
-                    <img
-                      src={profileImage}
-                      alt="Profile"
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">{userName}</h3>
-                    <p className="text-sm text-muted-foreground">{userEmail}</p>
+                    <h3 className="font-semibold">{displayName}</h3>
+                    <p className="text-sm text-muted-foreground">{displayEmail}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Menu items */}
               <div className="p-2">
                 {menuItems.map((item, index) => (
                   <motion.button
@@ -160,7 +106,6 @@ const HamburgerMenu = ({ onNavigate }: HamburgerMenuProps) => {
                 ))}
               </div>
 
-              {/* Logout */}
               <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border">
                 <button
                   onClick={() => handleItemClick("logout")}

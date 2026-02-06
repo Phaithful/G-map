@@ -75,6 +75,9 @@ const Login = () => {
       localStorage.setItem("accessToken", json.access);
       localStorage.setItem("refreshToken", json.refresh);
       localStorage.setItem("user", JSON.stringify(json.user));
+      window.dispatchEvent(new Event("authChanged"));
+      navigate("/");
+
 
       // ✅ Redirect to home
       navigate("/");
