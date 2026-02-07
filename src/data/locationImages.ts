@@ -30,7 +30,7 @@ export const locationImages: Record<string, string> = {
   "25": "/images/locations/Chisom Kitchen.jpeg",
   "26": "/images/locations/Computer Science Calis Restaurants.jpeg",
   "27": "/images/locations/Computer Science canteen.jpeg",
-  "28": "/images/locations/Crispy.jpeg",
+  "28": "/images/locations/Crispy.JPG",
   "29": "/images/locations/Cyrifex Pharmacy.jpeg",
   "30": "/images/locations/De Grace Multi-Link.jpeg",
   "31": "/images/locations/De Grace Unisex Salon.jpeg",
