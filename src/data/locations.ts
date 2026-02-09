@@ -124,11 +124,11 @@ export const campusLocations: Location[] = [
     openingHours: "Everyday: 6AM-6PM"
   },
 
-  // Food & Retail
+  // food & shops
   {
     id: "13",
     name: "7G Upgraded",
-    category: "Retail",
+    category: "shops",
     lat: 6.470324,
     lng: 7.526517,
     distance: "4 min",
@@ -285,6 +285,19 @@ export const campusLocations: Location[] = [
     openingHours: "Mon-Sun: 9AM-12AM"
   },
   {
+<<<<<<< HEAD
+=======
+    id: "29",
+    name: "Cyrifex Pharmacy",
+    category: "shops",
+    lat: 6.470009,
+    lng: 7.52698,
+    distance: "5min",
+    description: "Pharmacy",
+    openingHours: "Mon-Sun: 7AM-9PM"
+  },
+  {
+>>>>>>> 05a5ce6312a77af246d6235e1c90409cb602a3d7
     id: "30",
     name: "De Grace Multi-Link",
     category: "shops",
@@ -401,7 +414,7 @@ export const campusLocations: Location[] = [
     lat: 6.469883,
     lng: 7.525889,
     distance: "4 min",
-    description: "Retail Store",
+    description: "shops Store",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
@@ -411,17 +424,21 @@ export const campusLocations: Location[] = [
     lat: 6.470115,
     lng: 7.527027,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "43",
+<<<<<<< HEAD
     name: "Foodee",
+=======
+    name: "foodee",
+>>>>>>> 05a5ce6312a77af246d6235e1c90409cb602a3d7
     category: "food",
     lat: 6.468868,
     lng: 7.525917,
     distance: "3 min",
-    description: "Foodee Eatry",
+    description: "foodee Eatry",
     openingHours: "Mon-Sun: 8AM-8PM"
   },
   {
@@ -501,7 +518,7 @@ export const campusLocations: Location[] = [
     lat: 6.471345,
     lng: 7.526837,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
@@ -516,7 +533,11 @@ export const campusLocations: Location[] = [
   },
   {
     id: "53",
+<<<<<<< HEAD
     name: "Kay's Food Town",
+=======
+    name: "Kay's food Town",
+>>>>>>> 05a5ce6312a77af246d6235e1c90409cb602a3d7
     category: "food",
     lat: 6.471926,
     lng: 7.527256,
@@ -531,7 +552,7 @@ export const campusLocations: Location[] = [
     lat: 6.465668,
     lng: 7.526558,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
@@ -541,7 +562,7 @@ export const campusLocations: Location[] = [
     lat: 6.471460,
     lng: 7.526222,
     distance: "4 min",
-    description: "Retail Store",
+    description: "shops Store",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
@@ -581,7 +602,7 @@ export const campusLocations: Location[] = [
     lat: 6.471131,
     lng: 7.525817,
     distance: "5 min",
-    description: "Retail Store",
+    description: "shops Store",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
@@ -591,7 +612,7 @@ export const campusLocations: Location[] = [
     lat: 6.471124,
     lng: 7.526277,
     distance: "4 min",
-    description: "Retail Store",
+    description: "shops Store",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
@@ -601,13 +622,17 @@ export const campusLocations: Location[] = [
     lat: 6.469392,
     lng: 7.525421,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
     id: "62",
     name: "Mummy Faith Kitchen",
+<<<<<<< HEAD
     category: "food",
+=======
+    category: "shops",
+>>>>>>> 05a5ce6312a77af246d6235e1c90409cb602a3d7
     lat: 6.470502,
     lng: 7.525808,
     distance: "5 min",
@@ -621,7 +646,7 @@ export const campusLocations: Location[] = [
     lat: 6.471130,
     lng: 7.526246,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
@@ -661,7 +686,7 @@ export const campusLocations: Location[] = [
     lat: 6.472034,
     lng: 7.526372,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
@@ -671,7 +696,7 @@ export const campusLocations: Location[] = [
     lat: 6.471322,
     lng: 7.526345,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
@@ -681,7 +706,7 @@ export const campusLocations: Location[] = [
     lat: 6.471728,
     lng: 7.526787,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
@@ -691,7 +716,7 @@ export const campusLocations: Location[] = [
     lat: 6.471671,
     lng: 7.526532,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
@@ -711,7 +736,7 @@ export const campusLocations: Location[] = [
     lat: 6.471952,
     lng: 7.527232,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
@@ -721,7 +746,7 @@ export const campusLocations: Location[] = [
     lat: 6.471563,
     lng: 7.526944,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
@@ -771,7 +796,7 @@ export const campusLocations: Location[] = [
     lat: 6.471467,
     lng: 7.526232,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
@@ -791,7 +816,7 @@ export const campusLocations: Location[] = [
     lat: 6.471263,
     lng: 7.524212,
     distance: "4 min",
-    description: "Retail Shop",
+    description: "shops Shop",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {
@@ -811,7 +836,7 @@ export const campusLocations: Location[] = [
     lat: 6.470026,
     lng: 7.527137,
     distance: "4 min",
-    description: "Food",
+    description: "food",
     openingHours: "Mon-Sat: 9AM-6PM"
   },
   {

@@ -1,15 +1,9 @@
+// components/pages/ProfilePage.tsx
 import {
-  ArrowLeft,
-  User,
-  Heart,
-  Settings,
-  HelpCircle,
-  ChevronRight,
-  LogOut,
-  MapPin,
+  ArrowLeft, Heart, Settings, HelpCircle, ChevronRight, LogOut, MapPin,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useAuthUser } from "@/hooks/useAuthUser";
 
 interface ProfilePageProps {
   onBack: () => void;
@@ -17,53 +11,12 @@ interface ProfilePageProps {
   savedCount?: number;
 }
 
-const ProfilePage = ({
-  onBack,
-  onNavigate,
-  savedCount = 5,
-}: ProfilePageProps) => {
-  const [userName, setUserName] = useState("Guest User");
-  const [profileImage, setProfileImage] = useState("/images/profile_icon.png");
+const ProfilePage = ({ onBack, onNavigate, savedCount = 5 }: ProfilePageProps) => {
+  const { user, isAuthenticated, logout } = useAuthUser();
 
-  // Load user data on mount and when returning from edit
-  useEffect(() => {
-    const loadUserData = () => {
-      const savedName = localStorage.getItem("userName");
-      const savedImage = localStorage.getItem("profileImage");
-
-      if (savedName && savedName.trim() !== "") {
-        setUserName(savedName);
-      } else {
-        setUserName("Guest User");
-      }
-      if (savedImage && savedImage.trim() !== "") {
-        setProfileImage(savedImage);
-      } else {
-        setProfileImage("/images/profile_icon.png");
-      }
-    };
-
-    loadUserData();
-
-    // Listen for custom event when user data changes
-    const handleUserDataChanged = () => {
-      loadUserData();
-    };
-
-    window.addEventListener("userDataChanged", handleUserDataChanged);
-
-    // Also listen for storage changes (in case edited from another tab)
-    const handleStorageChange = () => {
-      loadUserData();
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-
-    return () => {
-      window.removeEventListener("userDataChanged", handleUserDataChanged);
-      window.removeEventListener("storage", handleStorageChange);
-    };
-  }, []);
+  const displayName = isAuthenticated && user?.name ? user.name : "Guest User";
+  const displayEmail = isAuthenticated && user?.email ? user.email : "Campus Explorer";
+  const profileImage = localStorage.getItem("profileImage") || "/images/profile_icon.png";
 
   const settingsItems = [
     { id: "saved", label: "Saved Locations", icon: MapPin, badge: savedCount },
@@ -77,32 +30,22 @@ const ProfilePage = ({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 bg-white dark:bg-background overflow-y-auto"
-
     >
-      {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-border">
-        <button
-          onClick={onBack}
-          className="p-2 hover:bg-muted rounded-full transition-colors"
-        >
+        <button onClick={onBack} className="p-2 hover:bg-muted rounded-full transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h1 className="text-lg font-semibold">Profile</h1>
       </div>
 
-      {/* Profile card */}
       <div className="p-6 flex flex-col items-center border-b border-border">
         <div className="w-24 h-24 rounded-full overflow-hidden mb-4 border-4 border-primary/20">
-          <img
-            src="/images/profile_icon.png"
-            alt="Profile"
-            className="w-full h-full object-cover"
-          />
+          <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
         </div>
-        <h2 className="text-xl font-bold">Guest User</h2>
-        <p className="text-muted-foreground">Campus Explorer</p>
 
-        {/* Stats */}
+        <h2 className="text-xl font-bold">{displayName}</h2>
+        <p className="text-muted-foreground">{displayEmail}</p>
+
         <div className="flex gap-8 mt-6">
           <button
             onClick={() => onNavigate?.("saved")}
@@ -117,11 +60,8 @@ const ProfilePage = ({
         </div>
       </div>
 
-      {/* Settings list */}
       <div className="p-4">
-        <h3 className="text-sm font-medium text-muted-foreground mb-2 px-2">
-          Settings
-        </h3>
+        <h3 className="text-sm font-medium text-muted-foreground mb-2 px-2">Settings</h3>
         <div className="space-y-1">
           {settingsItems.map((item) => (
             <button
@@ -142,10 +82,12 @@ const ProfilePage = ({
         </div>
       </div>
 
-      {/* Logout */}
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border">
         <button
-          onClick={() => onNavigate?.("logout")}
+          onClick={() => {
+            logout();
+            onNavigate?.("logout");
+          }}
           className="menu-item w-full text-destructive"
         >
           <LogOut className="w-5 h-5" />

@@ -22,7 +22,7 @@ const Index = () => {
   const navigate = useNavigate();
 
   // ✅ logged-in user (name/email) from storage
-  const { user, isAuthenticated, ready, logout } = useAuthUser();
+  const { user, isAuthenticated, logout } = useAuthUser();
 
   const [userLocation, setUserLocation] = useState<{
     lat: number;
@@ -31,12 +31,12 @@ const Index = () => {
 
   const [heading, setHeading] = useState<number | null>(null);
 
-  // ✅ OPTIONAL: protect this page (redirect to login if not signed in)
+  // ✅ OPTIONAL: protect this page (redirect to login if not signed in
+
   useEffect(() => {
-    if (ready && !isAuthenticated) {
-      navigate("/login");
-    }
-  }, [ready, isAuthenticated, navigate]);
+    if (!isAuthenticated) navigate("/login");
+  }, [isAuthenticated, navigate]);
+
 
   // ✅ Listen for device orientation (compass heading)
   useEffect(() => {
@@ -260,22 +260,6 @@ const Index = () => {
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-background">
-      {/* ✅ Logged-in user pill */}
-      <div className="absolute top-4 left-4 z-50">
-        {isAuthenticated && user ? (
-          <div className="rounded-full border bg-background/80 backdrop-blur px-4 py-2 shadow-sm">
-            <p className="text-sm font-semibold leading-tight">{user.name}</p>
-            <p className="text-xs text-muted-foreground leading-tight">{user.email}</p>
-          </div>
-        ) : (
-          <button
-            onClick={() => navigate("/login")}
-            className="rounded-full border bg-background/80 backdrop-blur px-4 py-2 shadow-sm text-sm"
-          >
-            Sign in
-          </button>
-        )}
-      </div>
 
       {/* Map */}
       <MapView

@@ -156,6 +156,16 @@
   }
 }
 
+/* Push Mapbox top-left controls down so they don't clash with the search bar */
+.gmap .mapboxgl-ctrl-top-left {
+  top: 72px; /* tweak this until it matches your hamburger/search bar row */
+}
+
+/* Optional: give it a little breathing room from the edge */
+.gmap .mapboxgl-ctrl-top-left .mapboxgl-ctrl {
+  margin: 0 0 0 12px;
+}
+
 @layer utilities {
   .animate-bounce-subtle {
     animation: bounce-subtle 2s ease-in-out infinite;

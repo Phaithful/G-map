@@ -1,5 +1,6 @@
 import uuid
 from datetime import timedelta
+
 from django.utils import timezone
 from django.conf import settings
 from django.db import transaction
@@ -18,13 +19,19 @@ from .serializers import (
 )
 from .utils import generate_otp, send_verification_email, send_reset_otp_email
 
+
 def tokens_for_user(user: User):
     refresh = RefreshToken.for_user(user)
-    return {
-        "refresh": str(refresh),
-        "access": str(refresh.access_token),
-    }
+    return {"refresh": str(refresh), "access": str(refresh.access_token)}
 
+
+def norm_email(email: str) -> str:
+    return (email or "").strip().lower()
+
+
+# -------------------------
+# AUTH
+# -------------------------
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def signup(request):
@@ -33,7 +40,7 @@ def signup(request):
         return Response({"error": s.errors}, status=status.HTTP_400_BAD_REQUEST)
 
     name = s.validated_data["name"]
-    email = s.validated_data["email"].lower()
+    email = norm_email(s.validated_data["email"])
     password = s.validated_data["password"]
 
     if User.objects.filter(email=email).exists():
@@ -75,10 +82,8 @@ def verify_email(request):
     user.is_verified = True
     user.save(update_fields=["is_verified"])
 
-    # token used once
     token_obj.delete()
 
-    # ✅ auto-login return JWT
     t = tokens_for_user(user)
     return Response({
         "message": "Email verified.",
@@ -95,7 +100,7 @@ def login(request):
     if not s.is_valid():
         return Response({"error": "Invalid credentials."}, status=status.HTTP_400_BAD_REQUEST)
 
-    email = s.validated_data["email"].lower()
+    email = norm_email(s.validated_data["email"])
     password = s.validated_data["password"]
 
     try:
@@ -117,6 +122,9 @@ def login(request):
     }, status=status.HTTP_200_OK)
 
 
+# -------------------------
+# FORGOT PASSWORD
+# -------------------------
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def forgot_password(request):
@@ -124,20 +132,35 @@ def forgot_password(request):
     if not s.is_valid():
         return Response({"error": "Enter a valid email."}, status=status.HTTP_400_BAD_REQUEST)
 
-    email = s.validated_data["email"].lower()
+    email = norm_email(s.validated_data["email"])
 
-    # IMPORTANT: don't reveal if email exists
+    # Do not reveal if user exists
     try:
         user = User.objects.get(email=email)
     except User.DoesNotExist:
         return Response({"message": "If that email exists, a code was sent."}, status=status.HTTP_200_OK)
 
-    # create OTP
+    # generate OTP as STRING
     code = generate_otp()
     expires_at = timezone.now() + timedelta(minutes=10)
 
-    PasswordResetOTP.objects.filter(user=user).delete()  # keep only one active code
-    PasswordResetOTP.objects.create(user=user, code=code, expires_at=expires_at)
+    # Keep only one active record per user
+    PasswordResetOTP.objects.filter(user=user).delete()
+
+    PasswordResetOTP.objects.create(
+        user=user,
+        code=code,
+        expires_at=expires_at,
+        attempts=0,
+        reset_token=None,
+        reset_expires_at=None
+    )
+
+    # PasswordResetOTP.objects.create(
+    #     user=user,
+    #     code=code,
+    #     expires_at=expires_at,
+    # )
 
     send_reset_otp_email(email, code)
 
@@ -149,10 +172,10 @@ def forgot_password(request):
 def verify_reset_otp(request):
     s = VerifyResetOTPSerializer(data=request.data)
     if not s.is_valid():
-        return Response({"error": "Invalid request."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": s.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-    email = s.validated_data["email"].lower()
-    otp = s.validated_data["otp"]
+    email = (s.validated_data["email"] or "").strip().lower()
+    otp = (s.validated_data["otp"] or "").strip()  # ✅ string
 
     try:
         user = User.objects.get(email=email)
@@ -164,26 +187,26 @@ def verify_reset_otp(request):
         otp_obj.delete()
         return Response({"error": "Code expired. Please resend."}, status=status.HTTP_400_BAD_REQUEST)
 
-    otp_obj.attempts += 1
-    otp_obj.save(update_fields=["attempts"])
+    # ✅ only count attempts when wrong
+    if str(otp_obj.code).strip() != otp:
+        otp_obj.attempts += 1
+        otp_obj.save(update_fields=["attempts"])
 
-    if otp_obj.attempts > 5:
-        otp_obj.delete()
-        return Response({"error": "Too many attempts. Please resend code."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        if otp_obj.attempts >= 5:
+            otp_obj.delete()
+            return Response({"error": "Too many attempts. Please resend code."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
-    if otp_obj.code != otp:
         return Response({"error": "Invalid code."}, status=status.HTTP_400_BAD_REQUEST)
 
-    # success -> generate resetToken (uuid)
+    # success -> generate resetToken
     reset_token = str(uuid.uuid4())
-
-    # store reset token temporarily in the otp record (simple & effective)
-    otp_obj.code = reset_token
-    otp_obj.expires_at = timezone.now() + timedelta(minutes=15)  # token expires
+    otp_obj.reset_token = reset_token
+    otp_obj.reset_expires_at = timezone.now() + timedelta(minutes=15)
     otp_obj.attempts = 0
-    otp_obj.save(update_fields=["code", "expires_at", "attempts"])
+    otp_obj.save(update_fields=["reset_token", "reset_expires_at", "attempts"])
 
     return Response({"resetToken": reset_token}, status=status.HTTP_200_OK)
+
 
 
 @api_view(["POST"])
@@ -193,16 +216,15 @@ def reset_password(request):
     if not s.is_valid():
         return Response({"error": "Invalid request."}, status=status.HTTP_400_BAD_REQUEST)
 
-    reset_token = s.validated_data["resetToken"]
+    reset_token = (s.validated_data["resetToken"] or "").strip()
     new_password = s.validated_data["password"]
 
-    # find the reset token in OTP table (we replaced code with reset token)
     try:
-        otp_obj = PasswordResetOTP.objects.select_related("user").get(code=reset_token)
+        otp_obj = PasswordResetOTP.objects.select_related("user").get(reset_token=reset_token)
     except PasswordResetOTP.DoesNotExist:
         return Response({"error": "Invalid or expired reset token."}, status=status.HTTP_400_BAD_REQUEST)
 
-    if otp_obj.is_expired():
+    if otp_obj.reset_token_is_expired():
         otp_obj.delete()
         return Response({"error": "Reset token expired. Please restart."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -211,5 +233,4 @@ def reset_password(request):
     user.save()
 
     otp_obj.delete()
-
     return Response({"message": "Password reset successful."}, status=status.HTTP_200_OK)

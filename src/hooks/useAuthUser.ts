@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export interface AuthUser {
   id?: number;
@@ -7,30 +7,30 @@ export interface AuthUser {
   is_verified?: boolean;
 }
 
+function readAuth() {
+  const token = localStorage.getItem("accessToken");
+  const storedUser = localStorage.getItem("user");
+
+  if (!token || !storedUser) return { user: null as AuthUser | null, isAuthenticated: false };
+
+  try {
+    return { user: JSON.parse(storedUser) as AuthUser, isAuthenticated: true };
+  } catch {
+    return { user: null as AuthUser | null, isAuthenticated: false };
+  }
+}
+
 export function useAuthUser() {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [ready, setReady] = useState(false);
+  const initial = readAuth();
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const token = localStorage.getItem("accessToken");
+  const [user, setUser] = useState<AuthUser | null>(initial.user);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(initial.isAuthenticated);
 
-    if (storedUser && token) {
-      try {
-        setUser(JSON.parse(storedUser));
-        setIsAuthenticated(true);
-      } catch {
-        setUser(null);
-        setIsAuthenticated(false);
-      }
-    } else {
-      setUser(null);
-      setIsAuthenticated(false);
-    }
-
-    setReady(true);
-  }, []);
+  const refreshFromStorage = () => {
+    const next = readAuth();
+    setUser(next.user);
+    setIsAuthenticated(next.isAuthenticated);
+  };
 
   const logout = () => {
     localStorage.removeItem("accessToken");
@@ -40,5 +40,5 @@ export function useAuthUser() {
     setIsAuthenticated(false);
   };
 
-  return { user, isAuthenticated, ready, logout };
+  return { user, isAuthenticated, refreshFromStorage, logout };
 }

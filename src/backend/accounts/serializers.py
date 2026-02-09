@@ -2,6 +2,10 @@ from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .models import User
 
+
+
+
+
 class SignupSerializer(serializers.Serializer):
     name = serializers.CharField()
     email = serializers.EmailField()
@@ -14,9 +18,16 @@ class LoginSerializer(serializers.Serializer):
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
+
 class VerifyResetOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    otp = serializers.CharField(min_length=6, max_length=6)
+    otp = serializers.CharField(max_length=6)
+
+    def validate_otp(self, value):
+        v = (value or "").strip()
+        if not v.isdigit() or len(v) != 6:
+            raise serializers.ValidationError("OTP must be 6 digits.")
+        return v
 
 class ResetPasswordSerializer(serializers.Serializer):
     resetToken = serializers.CharField()

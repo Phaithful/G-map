@@ -13,7 +13,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { saveAuth } from "@/lib/auth";
 
 interface LoginFormData {
   email: string;
@@ -72,12 +71,15 @@ const Login = () => {
         return;
       }
 
-      saveAuth({
-        access: json.access,
-        refresh: json.refresh,
-        user: json.user,
-      });
+      // ✅ SAVE AUTH (this is what useAuthUser reads)
+      localStorage.setItem("accessToken", json.access);
+      localStorage.setItem("refreshToken", json.refresh);
+      localStorage.setItem("user", JSON.stringify(json.user));
+      window.dispatchEvent(new Event("authChanged"));
+      navigate("/");
 
+
+      // ✅ Redirect to home
       navigate("/");
     } catch {
       form.setError("email", {
@@ -187,10 +189,7 @@ const Login = () => {
             transition={{ delay: 0.5 }}
           >
             <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6"
-              >
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
                   control={form.control}
                   name="email"
@@ -203,9 +202,7 @@ const Login = () => {
                   }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-foreground">
-                        Email Address
-                      </FormLabel>
+                      <FormLabel className="text-foreground">Email Address</FormLabel>
                       <FormControl>
                         <Input
                           type="email"
@@ -224,16 +221,11 @@ const Login = () => {
                   name="password"
                   rules={{
                     required: "Password is required",
-                    minLength: {
-                      value: 6,
-                      message: "Password must be at least 6 characters",
-                    },
+                    minLength: { value: 6, message: "Password must be at least 6 characters" },
                   }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-foreground">
-                        Password
-                      </FormLabel>
+                      <FormLabel className="text-foreground">Password</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
@@ -263,10 +255,7 @@ const Login = () => {
                 />
 
                 <div className="text-right">
-                  <Link
-                    to="/forgot-password"
-                    className="text-sm text-primary hover:underline"
-                  >
+                  <Link to="/forgot-password" className="text-sm text-primary hover:underline">
                     Forgot password?
                   </Link>
                 </div>
@@ -294,18 +283,13 @@ const Login = () => {
                 <span className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or
-                </span>
+                <span className="bg-background px-2 text-muted-foreground">Or</span>
               </div>
             </div>
 
             <p className="text-muted-foreground">
               Don&apos;t have an account?{" "}
-              <Link
-                to="/signup"
-                className="text-primary hover:underline font-semibold"
-              >
+              <Link to="/signup" className="text-primary hover:underline font-semibold">
                 Create one
               </Link>
             </p>

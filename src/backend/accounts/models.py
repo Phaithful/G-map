@@ -64,7 +64,14 @@ class PasswordResetOTP(models.Model):
     expires_at = models.DateTimeField()
     attempts = models.IntegerField(default=0)
 
+    # ✅ add these
+    reset_token = models.CharField(max_length=100, blank=True, null=True, db_index=True)
+    reset_expires_at = models.DateTimeField(blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def is_expired(self):
         return timezone.now() > self.expires_at
+    
+    def reset_token_is_expired(self):
+        return not self.reset_expires_at or self.reset_expires_at < timezone.now()
