@@ -285,8 +285,6 @@ export const campusLocations: Location[] = [
     openingHours: "Mon-Sun: 9AM-12AM"
   },
   {
-<<<<<<< HEAD
-=======
     id: "29",
     name: "Cyrifex Pharmacy",
     category: "shops",
@@ -297,7 +295,6 @@ export const campusLocations: Location[] = [
     openingHours: "Mon-Sun: 7AM-9PM"
   },
   {
->>>>>>> 05a5ce6312a77af246d6235e1c90409cb602a3d7
     id: "30",
     name: "De Grace Multi-Link",
     category: "shops",
@@ -429,11 +426,7 @@ export const campusLocations: Location[] = [
   },
   {
     id: "43",
-<<<<<<< HEAD
-    name: "Foodee",
-=======
     name: "foodee",
->>>>>>> 05a5ce6312a77af246d6235e1c90409cb602a3d7
     category: "food",
     lat: 6.468868,
     lng: 7.525917,
@@ -533,11 +526,7 @@ export const campusLocations: Location[] = [
   },
   {
     id: "53",
-<<<<<<< HEAD
-    name: "Kay's Food Town",
-=======
     name: "Kay's food Town",
->>>>>>> 05a5ce6312a77af246d6235e1c90409cb602a3d7
     category: "food",
     lat: 6.471926,
     lng: 7.527256,
@@ -628,11 +617,7 @@ export const campusLocations: Location[] = [
   {
     id: "62",
     name: "Mummy Faith Kitchen",
-<<<<<<< HEAD
-    category: "food",
-=======
     category: "shops",
->>>>>>> 05a5ce6312a77af246d6235e1c90409cb602a3d7
     lat: 6.470502,
     lng: 7.525808,
     distance: "5 min",
