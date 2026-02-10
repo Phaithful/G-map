@@ -838,17 +838,17 @@ export const campusLocations: Location[] = [
   // Academic buildings
   {
     id: "84",
-    name: "Microbiology lab",
+    name: "Biochemistry lab 1",
     category: "academics",
     lat: 6.469227,
     lng: 7.526794,
     distance: "7 min",
-    description: "Microbiology Laboratory",
+    description: "Biochemistry Laboratory",
     openingHours: "Mon-Fri: 8AM-6PM"
   },
   {
     id: "85",
-    name: "Biochemistry Lab",
+    name: "Biochemistry Lab 2",
     category: "academics",
     lat: 6.469233,  
     lng: 7.526827,
@@ -868,62 +868,63 @@ export const campusLocations: Location[] = [
   },
   {
     id: "87",
-    name: "DEPARTMENT OF ARCHITECTURE",
+    name: "Economics Class Two",
     category: "academics",
     lat: 6.469378,
     lng: 7.526855,
     distance: "9 min",
-    description: "Department of Architecture",
+    description: "COB 021",
+
     openingHours: "Mon-Fri: 8AM-6PM"
   },
   {
-    id: "88",
-    name: "SAM 002",
+    id: "89",
+    name: "Economics Class Three",
     category: "academics",
     lat: 6.446905,
     lng: 7.526749,
     distance: "6 min",
-    description: "Salvatore Mundi Hall",
+    description: "COB 018",
     openingHours: "Mon-Fri: 8AM-8PM"
   },
   {
-    id: "89",
-    name: "FACULTY OF ART 1",
-    category: "academics",
-    lat: 6.468327,
-    lng: 7.526935,
-    distance: "7 min",
-    description: "Faculty of Art",
-    openingHours: "Mon-Fri: 8AM-6PM"
-  },
-  {
     id: "90",
-    name: "FACULTY OF ARTS 2",
+    name: "Lecture Room Year 4",
     category: "academics",
     lat: 6.473600,
     lng: 7.529300,
     distance: "7 min",
-    description: "Faculty of Arts",
+    description: "COB 028",
+    openingHours: "Mon-Fri: 8AM-6PM"
+  },
+    {
+    id: "89",
+    name: "Lecture Room Year 2",
+    category: "academics",
+    lat: 6.468327,
+    lng: 7.526935,
+    distance: "7 min",
+    description: "COB 030",
     openingHours: "Mon-Fri: 8AM-6PM"
   },
   {
     id: "91",
-    name: "FACULTY OF EDUCATION",
+    name: "Lecture Room Year 3",
     category: "academics",
     lat: 6.469154,
     lng: 7.527325,
     distance: "7 min",
-    description: "Faculty of Education",
+    description: "COB 031",
     openingHours: "Mon-Fri: 8AM-6PM"
   },
   {
     id: "92",
-    name: "FACULTY OF MANAGEMENT AND SOCIAL SCIENCES",
+    name: "Department of Architecture PGD Studio",
     category: "academics",
     lat: 6.473800,
     lng: 7.529500,
     distance: "7 min",
-    description: "Faculty of Management and Social Sciences",
+    description: "Department of Architecture PGD Studio",
     openingHours: "Mon-Fri: 8AM-6PM"
   },
   {
@@ -938,22 +939,22 @@ export const campusLocations: Location[] = [
   },
   {
     id: "94",
-    name: "FACULTY OF NATURAL & APPLIED SCIENCES",
+    name: "E-Library",
     category: "academics",
     lat: 6.469176,
     lng: 7.526732,
     distance: "8 min",
-    description: "Faculty of Natural & Applied Sciences",
+    description: "Faculty of Law E-library",
     openingHours: "Mon-Fri: 8AM-6PM"
   },
   {
     id: "95",
-    name: "LIBRARY",
+    name: "UNIVERSITY LIBRARY",
     category: "academics",
     lat: 6.468911,
     lng: 7.527493,
     distance: "8 min",
-    description: "University Library",
+    description: "Main campus Library",
     openingHours: "Mon-Fri: 8AM-6PM"
   },
   {
@@ -1006,7 +1007,158 @@ export const campusLocations: Location[] = [
     description: "Computer Village",
     openingHours: "Mon-Sun: 8AM-5PM"
   },
+  {
+    id: "180",
+    name: "SAM 002",
+    category: "academics",
+    lat: 6.469100,
+    lng: 7.527000,
+    distance: "9 min",
+    description: "Sam building",
+    openingHours: "Mon-Sun: 8AM-5PM"
+  },
+  {
+    id: "190",
+    name: "Electronics Lab",
+    category: "academics",
+    lat: 6.469100,
+    lng: 7.527000,
+    distance: "9 min",
+    description: "Electronics Laboratory",
+    openingHours: "Mon-Sun: 8AM-5PM"
+  },
+  {
+    id: "191",
+    name: "FACULTY OF ARTS",
+    category: "academics",
+    lat: 6.469100,
+    lng: 7.527000,
+    distance: "9 min",
+    description: "Faculty of Arts Building",
+    openingHours: "Mon-Sun: 8AM-5PM"
+  },
+  {
+    id: "192",
+    name: "FED 0013",
+    category: "academics",
+    lat: 6.469100,
+    lng: 7.527000,
+    distance: "9 min",
+    description: "Faculty of Education classroom",
+    openingHours: "Mon-Sun: 8AM-5PM"
+  },
+  {
+    id: "193",
+    name: "FED 0015",
+    category: "academics",
+    lat: 6.469100,
+    lng: 7.527000,
+    distance: "9 min",
+    description: "Faculty of Education classroom",
+    openingHours: "Mon-Sun: 8AM-5PM"
+  },
+  {
+    id: "194",
+    name: "FACULTY OF EDUCATION",
+    category: "academics",
+    lat: 6.469100,
+    lng: 7.527000,
+    distance: "9 min",
+    description: "Faculty of Education Building",
+    openingHours: "Mon-Sun: 8AM-5PM"
+  },
+  {
+    id: "195",
+    name: "FACULTY OF NATURAL SCIENCES AND ENVIRONMENTAL STUDIES",
+    category: "academics",
+    lat: 6.469100,
+    lng: 7.527000,
+    distance: "9 min",
+    description: "Faculty of Natural Sciences and Environmental Studies Building",
+    openingHours: "Mon-Sun: 8AM-5PM"
+  },
+  {
+    id: "196",
+    name: "DIGITAL LOGIC LABORATORY AND HARDWARE LABORATORY",
+    category: "academics",
+    lat: 6.469100,
+    lng: 7.527000,
+    distance: "9 min",
+    description: "FCIT Digital Logic and Hardware Laboratory",
+    openingHours: "Mon-Sun: 8AM-5PM"
+  },
+  {
+    id: "197",
+    name: "JUPEB LECTURE CLASS",
+    category: "academics",
+    lat: 6.469100,
+    lng: 7.527000,
+    distance: "9 min",
+    description: "COB building",
+    openingHours: "Mon-Sun: 8AM-5PM"
+  },
+  {
+    id: "198",
+    name: "PHYSICS WORKSHOP",
+    category: "academics",
+    lat: 6.469100,
+    lng: 7.527000,
+    distance: "9 min",
+    description: "Physics Workshop",
+    openingHours: "Mon-Sun: 8AM-5PM"
+  },
+  {
+    id: "199",
+    name: "SAM 003",
+    category: "academics",
+    lat: 6.469100,
+    lng: 7.527000,
+    distance: "9 min",
+    description: "SAM building",
+    openingHours: "Mon-Sun: 8AM-5PM"
+  },
+  {
+    id: "200",
+    name: "Architecture Studio 1",
+    category: "academics",
+    lat: 6.469100,
+    lng: 7.527000,
+    distance: "9 min",
+    description: "Architecture Studio 1",
 
+    openingHours: "Mon-Sun: 8AM-5PM"
+  },
+    {
+    id: "201",
+    name: "Architecture Studio 3",
+    category: "academics",
+    lat: 6.469100,
+    lng: 7.527000,
+    distance: "9 min",
+    description: "Architecture Studio 3",
+    openingHours: "Mon-Sun: 8AM-5PM"
+  },
+    {
+    id: "202",
+    name: "Architecture Studio 4",
+    category: "academics",
+    lat: 6.469100,
+    lng: 7.527000,
+    distance: "9 min",
+    description: "Architecture Studio 4",
+    openingHours: "Mon-Sun: 8AM-5PM"
+  },
+    {
+    id: "203",
+    name: "Uchedigwe Hall",
+    category: "academics",
+    lat: 6.469100,
+    lng: 7.527000,
+    distance: "9 min",
+    description: "UCB Hall",
+    openingHours: "Mon-Sun: 8AM-5PM"
+  },
+  
   //Administrative (Offices)
   {
     id: "97",
@@ -1511,6 +1663,26 @@ export const campusLocations: Location[] = [
     description: "Pharmacy",
     openingHours: "Mon-Sun: 7AM-9PM"
   },
+  {
+    id: "188",
+    name: "Tower of Ivory Pharmacy",
+    category: "health",
+    lat: 6.468900,
+    lng: 7.526900,
+    distance: "5 min",
+    description: "Tower of Ivory Pharmacy",
+    openingHours: "Mon-Fri: 8AM-8PM"
+  },
+  {
+    id: "189",
+    name: "Apollo Pharmacy",
+    category: "health",
+    lat: 6.468900,
+    lng: 7.526900,
+    distance: "5 min",
+    description: "Apollo Pharmacy",
+    openingHours: "Mon-Fri: 8AM-8PM"
+  },
 
   //Sports
   {
@@ -1573,7 +1745,7 @@ export const campusLocations: Location[] = [
     description: "Ojels Game Centre",
     openingHours: "Mon-Fri: 8AM-8PM"
   },
-
+  
   // Churches
   {
     id: "151",
