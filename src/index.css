@@ -4,6 +4,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* -----------------------------
+   Base theme tokens + defaults
+------------------------------ */
+
 @layer base {
   :root {
     --background: 0 0% 98%;
@@ -81,9 +85,7 @@
 
     --sheet-handle: 220 10% 40%;
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }
@@ -98,21 +100,24 @@
   }
 }
 
+/* -----------------------------
+   Components
+------------------------------ */
 @layer components {
   .search-pill {
-    @apply bg-card rounded-full shadow-lg px-4 py-3 flex items-center gap-3 border border-border/50;
+    @apply bg-card rounded-full shadow-lg px-3 py-2 flex items-center gap-2 border border-border/50 text-sm;
   }
 
   .bottom-sheet {
-    @apply bg-card rounded-t-3xl shadow-[var(--shadow-sheet)] transition-transform duration-300 ease-out;
+    @apply bg-card rounded-t-2xl shadow-[var(--shadow-sheet)] transition-transform duration-300 ease-out;
   }
 
   .sheet-handle {
-    @apply w-10 h-1 rounded-full bg-[hsl(var(--sheet-handle))] mx-auto my-3;
+    @apply w-9 h-1 rounded-full bg-[hsl(var(--sheet-handle))] mx-auto my-2;
   }
 
   .category-chip {
-    @apply flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-secondary hover:bg-primary/10 transition-all duration-200 cursor-pointer;
+    @apply flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-secondary hover:bg-primary/10 transition-all duration-200 cursor-pointer;
   }
 
   .category-chip-active {
@@ -120,35 +125,35 @@
   }
 
   .location-card {
-    @apply bg-card rounded-2xl p-4 shadow-md hover:shadow-lg transition-all duration-200 flex gap-4 cursor-pointer border border-border/30;
+    @apply bg-card rounded-xl p-3 shadow-md hover:shadow-lg transition-all duration-200 flex gap-3 cursor-pointer border border-border/30;
   }
 
   .map-pin {
-    @apply w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg animate-bounce-subtle;
+    @apply w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg animate-bounce-subtle;
   }
 
   .floating-button {
-    @apply w-12 h-12 rounded-full bg-card shadow-lg flex items-center justify-center text-foreground hover:bg-muted transition-colors;
+    @apply w-10 h-10 rounded-full bg-card shadow-lg flex items-center justify-center text-foreground hover:bg-muted transition-colors;
   }
 
   .nav-pill {
-    @apply px-6 py-3 rounded-full bg-card shadow-lg flex items-center gap-3 text-sm font-medium;
+    @apply px-4 py-2 rounded-full bg-card shadow-lg flex items-center gap-2 text-xs font-medium;
   }
 
   .cta-button {
-    @apply w-full py-4 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-md hover:shadow-lg hover:bg-primary/90 transition-all duration-200 active:scale-[0.98];
+    @apply w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm shadow-md hover:shadow-lg hover:bg-primary/90 transition-all duration-200 active:scale-[0.98];
   }
 
   .icon-button {
-    @apply w-12 h-12 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center hover:bg-primary/10 transition-colors;
+    @apply w-10 h-10 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center hover:bg-primary/10 transition-colors;
   }
 
   .menu-item {
-    @apply flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-muted transition-colors cursor-pointer;
+    @apply flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors cursor-pointer text-sm;
   }
 
   .badge {
-    @apply px-3 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground;
+    @apply px-2 py-0.5 rounded-full text-[11px] font-medium bg-secondary text-secondary-foreground;
   }
 
   .shimmer {
@@ -156,16 +161,9 @@
   }
 }
 
-/* Push Mapbox top-left controls down so they don't clash with the search bar */
-.gmap .mapboxgl-ctrl-top-left {
-  top: 72px; /* tweak this until it matches your hamburger/search bar row */
-}
-
-/* Optional: give it a little breathing room from the edge */
-.gmap .mapboxgl-ctrl-top-left .mapboxgl-ctrl {
-  margin: 0 0 0 12px;
-}
-
+/* -----------------------------
+   Utilities + animations
+------------------------------ */
 @layer utilities {
   .animate-bounce-subtle {
     animation: bounce-subtle 2s ease-in-out infinite;
@@ -198,48 +196,48 @@
 }
 
 @keyframes bounce-subtle {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-4px);
-  }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
 
 @keyframes slide-up {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 @keyframes slide-down {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(100%);
-  }
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
 }
 
 @keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes scale-in {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* -----------------------------
+   Mapbox overrides (best placed at the end)
+------------------------------ */
+
+/* Push Mapbox top-left controls down so they don't clash with the search bar */
+.gmap .mapboxgl-ctrl-top-left {
+  top: 60px; /* was 72px */
+}
+
+
+/* Optional: breathing room from the left */
+.gmap .mapboxgl-ctrl-top-left .mapboxgl-ctrl {
+  margin: 0 0 0 10px; /* was 12px */
+}
+
+
+/* If you ever re-enable Mapbox's built-in accuracy circle, keep it clean */
+.mapboxgl-user-location-accuracy-circle {
+  background-color: rgba(37, 99, 235, 0.12) !important;
+  border: 1px solid rgba(37, 99, 235, 0.25) !important;
 }

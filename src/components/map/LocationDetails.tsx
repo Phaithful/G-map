@@ -14,22 +14,23 @@ interface LocationDetailsProps {
   isSaved?: boolean;
 }
 
-// Image handling is now done through OptimizedImage component and locationImages data
-
-const LocationDetails = ({ 
-  location, 
-  isOpen, 
-  onClose, 
+const LocationDetails = ({
+  location,
+  isOpen,
+  onClose,
   onNavigate,
   onSave,
   onShare,
-  isSaved = false
+  isSaved = false,
 }: LocationDetailsProps) => {
   if (!location) return null;
 
-  // Get image URL - specific location image or category fallback
   const getImageUrl = () => {
-    return locationImages[location.id] || categoryFallbacks[location.category] || "/images/default-location.jpg";
+    return (
+      locationImages[location.id] ||
+      categoryFallbacks[location.category] ||
+      "/images/default-location.jpg"
+    );
   };
 
   const imageUrl = getImageUrl();
@@ -42,10 +43,9 @@ const LocationDetails = ({
           animate={{ y: 0 }}
           exit={{ y: "100%" }}
           transition={{ type: "spring", damping: 30, stiffness: 300 }}
-          className="fixed inset-x-0 bottom-0 z-50 bg-card rounded-t-3xl shadow-sheet max-h-[85vh] overflow-hidden"
+          className="fixed inset-x-0 bottom-0 z-50 bg-card rounded-t-2xl shadow-sheet max-h-[82vh] overflow-hidden"
         >
-          {/* Image header */}
-          <div className="relative h-48 overflow-hidden">
+          <div className="relative h-40 overflow-hidden">
             <OptimizedImage
               src={imageUrl}
               alt={location.name}
@@ -54,80 +54,71 @@ const LocationDetails = ({
               priority={true}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-            <button
-              onClick={onClose}
-              className="absolute top-4 left-4 floating-button"
-            >
-              <ArrowLeft className="w-5 h-5" />
+
+            <button onClick={onClose} className="absolute top-3 left-3 floating-button">
+              <ArrowLeft className="w-4 h-4" />
             </button>
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 floating-button"
-            >
-              <X className="w-5 h-5" />
+
+            <button onClick={onClose} className="absolute top-3 right-3 floating-button">
+              <X className="w-4 h-4" />
             </button>
-            
-            {/* Location icon overlay */}
-            <div className="absolute bottom-4 left-4">
-              <div className="w-16 h-16 rounded-2xl bg-card shadow-lg flex items-center justify-center">
-                <MapPin className="w-8 h-8 text-primary" />
+
+            <div className="absolute bottom-3 left-3">
+              <div className="w-12 h-12 rounded-xl bg-card shadow-lg flex items-center justify-center">
+                <MapPin className="w-6 h-6 text-primary" />
               </div>
             </div>
           </div>
 
-          {/* Content */}
-          <div className="p-4 pb-8 overflow-y-auto" style={{ maxHeight: 'calc(85vh - 12rem)' }}>
-            {/* Title and badge */}
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold text-foreground">{location.name}</h2>
-              <div className="flex items-center gap-3 mt-2">
+          <div className="p-3 pb-6 overflow-y-auto" style={{ maxHeight: "calc(82vh - 10rem)" }}>
+            <div className="mb-3">
+              <h2 className="text-xl font-bold text-foreground">{location.name}</h2>
+              <div className="flex items-center gap-2.5 mt-2">
                 <span className="badge bg-primary/10 text-primary capitalize">{location.category}</span>
-                <span className="text-muted-foreground">{location.distance}</span>
+                <span className="text-xs text-muted-foreground">{location.distance}</span>
               </div>
             </div>
 
-            {/* Action buttons */}
-            <div className="flex gap-3 mb-6">
+            <div className="flex gap-2.5 mb-4">
               <button onClick={onNavigate} className="cta-button flex items-center justify-center gap-2">
-                <Navigation className="w-5 h-5" />
+                <Navigation className="w-4 h-4" />
                 Get Directions
               </button>
-              <button 
-                onClick={onSave} 
-                className={`icon-button transition-all duration-200 ${isSaved ? 'bg-primary text-primary-foreground' : ''}`}
+
+              <button
+                onClick={onSave}
+                className={`icon-button transition-all duration-200 ${isSaved ? "bg-primary text-primary-foreground" : ""}`}
+                aria-label="Save"
               >
-                <Heart className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+                <Heart className={`w-4 h-4 ${isSaved ? "fill-current" : ""}`} />
               </button>
-              <button onClick={onShare} className="icon-button">
-                <Share2 className="w-5 h-5" />
+
+              <button onClick={onShare} className="icon-button" aria-label="Share">
+                <Share2 className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Details */}
-            <div className="space-y-4">
-              {/* Opening hours */}
-              <div className="flex items-start gap-3 p-4 bg-muted rounded-2xl">
-                <Clock className="w-5 h-5 text-primary mt-0.5" />
+            <div className="space-y-3">
+              <div className="flex items-start gap-2.5 p-3 bg-muted rounded-xl">
+                <Clock className="w-4 h-4 text-primary mt-0.5" />
                 <div>
-                  <h4 className="font-medium">Opening Hours</h4>
-                  <p className="text-sm text-muted-foreground">
+                  <h4 className="font-medium text-sm">Opening Hours</h4>
+                  <p className="text-xs text-muted-foreground">
                     {location.openingHours || "Mon - Fri: 8:00 AM - 6:00 PM"}
                   </p>
                 </div>
               </div>
 
-              {/* Description */}
               <div>
-                <h4 className="font-medium mb-2">About</h4>
-                <p className="text-muted-foreground leading-relaxed">
-                  {location.description || 
+                <h4 className="font-medium text-sm mb-1.5">About</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {location.description ||
                     "This is a key location on campus. Visit during opening hours for assistance and services. Accessible via the main campus path."}
                 </p>
               </div>
 
-              {/* Report issue */}
-              <button className="w-full flex items-center justify-center gap-2 p-4 border border-border rounded-2xl text-muted-foreground hover:bg-muted transition-colors">
-                <AlertCircle className="w-5 h-5" />
+              <button className="w-full flex items-center justify-center gap-2 p-3 border border-border rounded-xl text-muted-foreground hover:bg-muted transition-colors text-sm">
+                <AlertCircle className="w-4 h-4" />
                 Report an issue
               </button>
             </div>

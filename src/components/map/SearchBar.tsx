@@ -1,8 +1,9 @@
+// src/components/map/SearchBar.tsx
 import { Search, SlidersHorizontal, ArrowLeft, X, MapPin } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { campusLocations } from "../../data/locations";
-import { Location } from "./LocationCard";
+import campusLocations from "../../data/locations";
+import type { Location } from "../../types";
 
 interface SearchBarProps {
   onSearch?: (query: string) => void;
@@ -10,6 +11,50 @@ interface SearchBarProps {
   onFilterClick?: () => void;
   onCloseBottomSheet?: () => void;
   placeholder?: string;
+}
+
+function pickPopularLocationsRandomDifferentCategories(all: Location[], count = 4) {
+  // Group by category
+  const byCategory = new Map<string, Location[]>();
+  for (const loc of all) {
+    const cat = (loc.category || "other").toLowerCase();
+    if (!byCategory.has(cat)) byCategory.set(cat, []);
+    byCategory.get(cat)!.push(loc);
+  }
+
+  // Shuffle helper
+  const shuffle = <T,>(arr: T[]) => {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+
+  const categories = shuffle(Array.from(byCategory.keys()));
+
+  // First pass: 1 random per category
+  const picks: Location[] = [];
+  for (const cat of categories) {
+    const list = byCategory.get(cat)!;
+    if (!list?.length) continue;
+    const chosen = list[Math.floor(Math.random() * list.length)];
+    picks.push(chosen);
+    if (picks.length >= count) break;
+  }
+
+  // If not enough categories, fill from remaining randoms
+  if (picks.length < count) {
+    const usedIds = new Set(picks.map((p) => String(p.id)));
+    const remaining = shuffle(all).filter((l) => !usedIds.has(String(l.id)));
+    for (const loc of remaining) {
+      picks.push(loc);
+      if (picks.length >= count) break;
+    }
+  }
+
+  return picks.slice(0, count);
 }
 
 const SearchBar = ({
@@ -22,25 +67,38 @@ const SearchBar = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Location[]>([]);
+  const [popular, setPopular] = useState<Location[]>([]);
+
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Generate 4 random popular locations from different categories
   useEffect(() => {
-    if (isExpanded && inputRef.current) {
-      inputRef.current.focus();
+    setPopular(pickPopularLocationsRandomDifferentCategories(campusLocations as Location[], 4));
+  }, []);
+
+  // Regenerate popular each time overlay opens (so it feels fresh)
+  useEffect(() => {
+    if (isExpanded) {
+      setPopular(pickPopularLocationsRandomDifferentCategories(campusLocations as Location[], 4));
     }
+  }, [isExpanded]);
+
+  useEffect(() => {
+    if (isExpanded && inputRef.current) inputRef.current.focus();
   }, [isExpanded]);
 
   // Update suggestions as user types
   useEffect(() => {
-    if (query.trim().length > 0) {
-      const filtered = campusLocations
-        .filter(
-          (location) =>
-            location.name.toLowerCase().includes(query.toLowerCase()) ||
-            location.category.toLowerCase().includes(query.toLowerCase()) ||
-            location.description.toLowerCase().includes(query.toLowerCase()),
-        )
-        .slice(0, 8); // Limit to 8 suggestions
+    const q = query.trim().toLowerCase();
+    if (q.length > 0) {
+      const filtered = (campusLocations as Location[])
+        .filter((location) => {
+          const name = (location.name || "").toLowerCase();
+          const cat = (location.category || "").toLowerCase();
+          const desc = (location.description || "").toLowerCase();
+          return name.includes(q) || cat.includes(q) || desc.includes(q);
+        })
+        .slice(0, 8);
       setSuggestions(filtered);
     } else {
       setSuggestions([]);
@@ -53,11 +111,11 @@ const SearchBar = ({
   };
 
   const handleLocationClick = (location: Location) => {
-    setQuery(""); // Clear the search query immediately
+    setQuery("");
     setSuggestions([]);
     setIsExpanded(false);
     onLocationSelect?.(location);
-    onSearch?.(""); // Clear the search filter to show all locations
+    onSearch?.("");
   };
 
   const handleClear = () => {
@@ -85,8 +143,14 @@ const SearchBar = ({
       sports: "bg-yellow-100 text-yellow-800",
       shops: "bg-pink-100 text-pink-800",
     };
-    return colors[category] || "bg-gray-100 text-gray-800";
+    return colors[(category || "").toLowerCase()] || "bg-gray-100 text-gray-800";
   };
+
+  const title = useMemo(() => {
+    if (query && suggestions.length > 0) return `Locations (${suggestions.length})`;
+    if (query && suggestions.length === 0) return "";
+    return "Popular Locations";
+  }, [query, suggestions.length]);
 
   return (
     <>
@@ -107,9 +171,8 @@ const SearchBar = ({
               className="search-pill w-full"
             >
               <Search className="w-5 h-5 text-muted-foreground" />
-              <span className="flex-1 text-left text-muted-foreground">
-                {placeholder}
-              </span>
+              <span className="flex-1 text-left text-muted-foreground">{placeholder}</span>
+
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -141,6 +204,7 @@ const SearchBar = ({
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
+
               <div className="flex-1 relative">
                 <input
                   ref={inputRef}
@@ -161,13 +225,12 @@ const SearchBar = ({
               </div>
             </div>
 
-            {/* Search suggestions */}
+            {/* Suggestions */}
             <div className="flex-1 overflow-y-auto">
               {query && suggestions.length > 0 ? (
                 <div className="p-4">
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                    Locations ({suggestions.length})
-                  </h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-3">{title}</h3>
+
                   <div className="space-y-2">
                     {suggestions.map((location) => (
                       <button
@@ -175,24 +238,25 @@ const SearchBar = ({
                         onClick={() => handleLocationClick(location)}
                         className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors text-left group"
                       >
-                        <div className="flex-shrink-0">
-                          <MapPin className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-foreground truncate">
+                        <MapPin className="w-4 h-4 text-muted-foreground group-hover:text-primary flex-shrink-0" />
+
+                        {/* LEFT aligned + smaller font + truncation */}
+                        <div className="flex-1 min-w-0 text-left">
+                          <div className="text-sm font-medium text-foreground truncate">
                             {location.name}
                           </div>
-                          <div className="text-sm text-muted-foreground truncate">
-                            {location.description}
+                          <div className="text-xs text-muted-foreground truncate">
+                            {location.description || ""}
                           </div>
                         </div>
-                        <div className="flex-shrink-0">
-                          <span
-                            className={`text-xs px-2 py-1 rounded-full font-medium ${getCategoryColor(location.category)}`}
-                          >
-                            {location.category}
-                          </span>
-                        </div>
+
+                        <span
+                          className={`text-[11px] px-2 py-0.5 rounded-full font-medium capitalize flex-shrink-0 ${getCategoryColor(
+                            location.category,
+                          )}`}
+                        >
+                          {location.category}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -207,29 +271,33 @@ const SearchBar = ({
                 </div>
               ) : (
                 <div className="p-4">
-                  <h3 className="text-sm font-medium text-muted-foreground mb-3">
-                    Popular Locations
-                  </h3>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-3">{title}</h3>
+
                   <div className="space-y-2">
-                    {[
-                      { name: "Central Cafeteria", category: "food" },
-                      { name: "Admin Block", category: "offices" },
-                      { name: "Engineering Block", category: "academics" },
-                      { name: "Sports Complex", category: "sports" },
-                    ].map((item) => (
+                    {popular.map((location) => (
                       <button
-                        key={item.name}
-                        onClick={() => handleSearch(item.name)}
+                        key={location.id}
+                        onClick={() => handleLocationClick(location)}
                         className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors text-left group"
                       >
-                        <Search className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
-                        <div className="flex-1">
-                          <span className="font-medium">{item.name}</span>
+                        <Search className="w-4 h-4 text-muted-foreground group-hover:text-primary flex-shrink-0" />
+
+                        {/* LEFT aligned + smaller font + truncation */}
+                        <div className="flex-1 min-w-0 text-left">
+                          <div className="text-sm font-medium text-foreground truncate">
+                            {location.name}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            {location.description || ""}
+                          </div>
                         </div>
+
                         <span
-                          className={`text-xs px-2 py-1 rounded-full font-medium ${getCategoryColor(item.category)}`}
+                          className={`text-[11px] px-2 py-0.5 rounded-full font-medium capitalize flex-shrink-0 ${getCategoryColor(
+                            location.category,
+                          )}`}
                         >
-                          {item.category}
+                          {location.category}
                         </span>
                       </button>
                     ))}

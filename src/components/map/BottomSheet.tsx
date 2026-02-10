@@ -18,15 +18,13 @@ const BottomSheet = ({
   isExpanded = false,
 }: BottomSheetProps) => {
   const [snapIndex, setSnapIndex] = useState(0);
-  const snapPoints = [0.35, 0.65, 0.85]; // Percentage of screen height from bottom
 
-  // Auto-expand when isExpanded prop changes
+  // slightly smaller feel
+  const snapPoints = [0.32, 0.6, 0.82];
+
   useEffect(() => {
-    if (isExpanded) {
-      setSnapIndex(1); // Expand to first expanded state
-    } else {
-      setSnapIndex(0); // Collapse
-    }
+    if (isExpanded) setSnapIndex(1);
+    else setSnapIndex(0);
   }, [isExpanded]);
 
   const handleDragEnd = (
@@ -36,14 +34,10 @@ const BottomSheet = ({
     const velocity = info.velocity.y;
 
     if (velocity < -300) {
-      // Swiping up fast
       setSnapIndex(Math.min(snapIndex + 1, snapPoints.length - 1));
     } else if (velocity > 300) {
-      // Swiping down fast
       setSnapIndex(Math.max(snapIndex - 1, 0));
     } else {
-      // Snap to nearest
-      const currentHeight = snapPoints[snapIndex];
       const offset = info.offset.y;
       const screenHeight = window.innerHeight;
       const dragPercentage = offset / screenHeight;
@@ -70,26 +64,23 @@ const BottomSheet = ({
       dragElastic={0.2}
       onDragEnd={handleDragEnd}
     >
-      {/* Handle */}
       <div className="sheet-handle cursor-grab active:cursor-grabbing" />
 
-      {/* Content */}
       <div
-        className="px-4 pb-8 overflow-y-auto no-scrollbar"
+        className="px-3 pb-6 overflow-y-auto no-scrollbar"
         style={{ maxHeight: `calc(${currentHeight * 100}vh - 2rem)` }}
       >
         {children}
 
-        {/* Share Location Button - Only visible when collapsed */}
         {!isSheetExpanded && (
           <motion.button
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             onClick={onShareLocation}
-            className="w-full mt-4 py-4 rounded-2xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transition-all active:scale-[0.98]"
+            className="w-full mt-3 py-3 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all active:scale-[0.98] text-sm"
           >
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
               <Share2 className="w-4 h-4" />
             </div>
             <span>Share My Location</span>
@@ -98,20 +89,16 @@ const BottomSheet = ({
 
         {isSheetExpanded && (expandedHeader || expandedContent) && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mt-6 flex flex-col h-full"
-            style={{ maxHeight: `calc(${currentHeight * 100}vh - 8rem)` }}
+            transition={{ delay: 0.08 }}
+            className="mt-4 flex flex-col h-full"
+            style={{ maxHeight: `calc(${currentHeight * 100}vh - 7rem)` }}
           >
-            {/* Fixed header */}
-            {expandedHeader && (
-              <div className="flex-shrink-0 pb-4">{expandedHeader}</div>
-            )}
+            {expandedHeader && <div className="flex-shrink-0 pb-3">{expandedHeader}</div>}
 
-            {/* Scrollable content */}
             {expandedContent && (
-              <div className="flex-1 overflow-y-auto no-scrollbar space-y-3">
+              <div className="flex-1 overflow-y-auto no-scrollbar space-y-2.5">
                 {expandedContent}
               </div>
             )}

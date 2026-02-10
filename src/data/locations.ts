@@ -1602,7 +1602,7 @@ export const campusLocations: Location[] = [
     openingHours: "Mon-Fri: 8AM-5PM"
   },
   {
-    id: "185",
+    id: "186",
     name: "GST office",
     category: "offices",
     lat: 6.469165,
@@ -1612,7 +1612,7 @@ export const campusLocations: Location[] = [
     openingHours: "Mon-Fri: 8AM-5PM"
   },
   {
-    id: "185",
+    id: "187",
     name: "Secretary of FNSES Office",
     category: "offices",
     lat: 6.468883,
