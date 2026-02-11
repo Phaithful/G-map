@@ -1,3 +1,4 @@
+// src/pages/index.tsx
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
@@ -54,6 +55,35 @@ const Index = () => {
   const [showPermModal, setShowPermModal] = useState(false);
   const [permissionsStarted, setPermissionsStarted] = useState(false);
   const [motionEnabled, setMotionEnabled] = useState(false);
+
+  // ✅ Navigation split
+  const [isNavOpen, setIsNavOpen] = useState(false); // preview open (Get Directions)
+  const [hasStartedNav, setHasStartedNav] = useState(false); // Start pressed
+
+  // ✅ Accurate route numbers
+  const [routeInfo, setRouteInfo] = useState<{ distance: number; duration: number } | null>(null);
+  const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string;
+
+  async function fetchRouteInfo(args: {
+    from: { lng: number; lat: number };
+    to: { lng: number; lat: number };
+    profile: "walking" | "driving" | "cycling";
+  }) {
+    const { from, to, profile } = args;
+
+    const url =
+      `https://api.mapbox.com/directions/v5/mapbox/${profile}/` +
+      `${from.lng},${from.lat};${to.lng},${to.lat}` +
+      `?geometries=geojson&overview=simplified&steps=false&access_token=${MAPBOX_TOKEN}`;
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Failed to fetch route info");
+    const data = await res.json();
+
+    const r = data?.routes?.[0];
+    if (!r) throw new Error("No route found");
+    return { distance: r.distance as number, duration: r.duration as number };
+  }
 
   if (!("geolocation" in navigator)) {
     return <div>Geolocation not supported on this device.</div>;
@@ -193,7 +223,7 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [showLocationDetails, setShowLocationDetails] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false);
+
   const [currentPage, setCurrentPage] = useState<string | null>(null);
   const [savedLocations, setSavedLocations] = useState<Location[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -250,9 +280,11 @@ const Index = () => {
     setShowLocationDetails(true);
   }, []);
 
+  // ✅ "Get directions"
   const handleNavigate = useCallback(() => {
     setShowLocationDetails(false);
-    setIsNavigating(true);
+    setIsNavOpen(true); // preview open
+    setHasStartedNav(false); // not started yet
   }, []);
 
   const handleSaveLocation = useCallback(() => {
@@ -300,7 +332,9 @@ const Index = () => {
     }
   }, []);
 
-  const isLocationSaved = selectedLocation ? savedLocations.some((l) => l.id === selectedLocation.id) : false;
+  const isLocationSaved = selectedLocation
+    ? savedLocations.some((l) => l.id === selectedLocation.id)
+    : false;
 
   const getCategoryTitle = () => {
     if (!selectedCategory) return "Popular Locations";
@@ -317,6 +351,44 @@ const Index = () => {
     return categoryMap[selectedCategory] || "Popular Locations";
   };
 
+  // ✅ accurate distance/time for preview + started (debounced)
+  useEffect(() => {
+    let cancelled = false;
+    let t: any = null;
+
+    const run = async () => {
+      if (!isNavOpen || !selectedLocation) {
+        setRouteInfo(null);
+        return;
+      }
+
+      const pos = userLocationRef.current ?? userLocation;
+      if (!pos) return;
+
+      try {
+        const info = await fetchRouteInfo({
+          from: { lng: pos.lng, lat: pos.lat },
+          to: { lng: selectedLocation.lng, lat: selectedLocation.lat },
+          profile: "walking",
+        });
+
+        if (!cancelled) setRouteInfo(info);
+      } catch {
+        if (!cancelled) setRouteInfo(null);
+      }
+    };
+
+    t = setTimeout(run, 250);
+
+    return () => {
+      cancelled = true;
+      if (t) clearTimeout(t);
+    };
+  }, [isNavOpen, selectedLocation?.id, userLocation]);
+
+  // --------------------------
+  // Pages
+  // --------------------------
   if (currentPage === "profile") {
     return (
       <ProfilePage
@@ -345,6 +417,9 @@ const Index = () => {
     return <SettingsPage onBack={() => setCurrentPage(null)} />;
   }
 
+  // --------------------------
+  // Main
+  // --------------------------
   return (
     <div className="relative h-screen w-full overflow-hidden bg-background">
       {showPermModal && (
@@ -417,18 +492,28 @@ const Index = () => {
         onPinClick={(loc) => {
           const full = campusLocations.find((l) => l.id === loc.id);
           if (!full) return;
-          if (isNavigating) setSelectedLocation(full);
-          else handleLocationSelect(full);
+
+          // ✅ If we're in nav preview/started, we don't want LocationDetails stacking.
+          // Instead, just change destination and keep nav UI.
+          if (isNavOpen) {
+            setSelectedLocation(full);
+            setShowLocationDetails(false);
+            return;
+          }
+
+          handleLocationSelect(full);
         }}
         userLocation={userLocation}
         userLocationRef={userLocationRef}
         headingRef={motionEnabled ? headingRef : undefined}
-        isNavigating={isNavigating}
+        routeActive={isNavOpen || hasStartedNav} // ✅ show route on Get Directions
+        hideOtherPins={hasStartedNav} // ✅ hide pins only after Start
         activeDestination={selectedLocation}
         routeProfile="walking"
       />
 
-      {!isNavigating && (
+      {/* Only show search/menu/bottomsheet when NOT in nav preview */}
+      {!isNavOpen && (
         <SearchBar
           onSearch={setSearchQuery}
           onLocationSelect={handleLocationSelect}
@@ -440,15 +525,19 @@ const Index = () => {
         />
       )}
 
-      {!isNavigating && <HamburgerMenu onNavigate={handleMenuNavigate} />}
+      {!isNavOpen && <HamburgerMenu onNavigate={handleMenuNavigate} />}
 
-      {!isNavigating && !showLocationDetails && (
+      {!isNavOpen && !showLocationDetails && (
         <BottomSheet
           onShareLocation={handleShareLocation}
           isExpanded={!!selectedCategory}
           expandedHeader={<h3 className="text-base font-semibold">{getCategoryTitle()}</h3>}
           expandedContent={expandedLocations.map((location) => (
-            <LocationCard key={location.id} location={location} onClick={() => handleLocationSelect(location)} />
+            <LocationCard
+              key={location.id}
+              location={location}
+              onClick={() => handleLocationSelect(location)}
+            />
           ))}
         >
           <div className="space-y-3">
@@ -477,19 +566,31 @@ const Index = () => {
         )}
       </AnimatePresence>
 
-      <NavigationMode
-        isActive={isNavigating}
-        destination={selectedLocation}
-        onClose={() => {
-          setIsNavigating(false);
-          setSelectedLocation(null);
-        }}
-        onStart={() => {
-          if (!selectedLocation) return;
-          setIsNavigating(true);
-        }}
-        onMenuNavigate={handleMenuNavigate}
-      />
+      {/* ✅ Never show 2 bottom sheets at once:
+          if LocationDetails is open, hide nav UI */}
+      {!showLocationDetails && (
+        <NavigationMode
+          isActive={isNavOpen}
+          hasStarted={hasStartedNav}
+          destination={selectedLocation}
+          distanceMeters={routeInfo?.distance ?? null}
+          durationSeconds={routeInfo?.duration ?? null}
+          onClose={() => {
+            setIsNavOpen(false);
+            setHasStartedNav(false);
+            setSelectedLocation(null);
+            setRouteInfo(null);
+          }}
+          onExit={() => {
+            setHasStartedNav(false);
+          }}
+          onStart={() => {
+            if (!selectedLocation) return;
+            setHasStartedNav(true);
+          }}
+          onMenuNavigate={handleMenuNavigate}
+        />
+      )}
     </div>
   );
 };

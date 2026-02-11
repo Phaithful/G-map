@@ -1,3 +1,4 @@
+// src/components/map/MapView.tsx
 import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -26,9 +27,16 @@ interface MapViewProps {
 
   headingRef?: React.MutableRefObject<number | null>;
 
-  isNavigating?: boolean;
-  activeDestination?: Location | null;
+  /** show route as soon as "Get Directions" opens */
+  routeActive?: boolean;
 
+  /**
+   * ✅ Start mode: hide every POI marker except destination.
+   * Markers MUST stay hidden until Exit.
+   */
+  hideOtherPins?: boolean;
+
+  activeDestination?: Location | null;
   routeProfile?: "walking" | "driving" | "cycling";
 }
 
@@ -206,28 +214,21 @@ function approxMeters(a: { lat: number; lng: number }, b: { lat: number; lng: nu
 }
 
 // ------------------------
-// ✅ Campus bounds (expanded ~150m on all sides)
-// Original SW: [7.5256750, 6.4667163]
-// Original NE: [7.5308232, 6.4719171]
-// Added ~150m:
-//  Δlat ≈ 0.001347
-//  Δlng ≈ 0.001356 (at this latitude)
+// Campus bounds
 // ------------------------
 const CAMPUS_BOUNDS_EXPANDED: [[number, number], [number, number]] = [
-  [7.5243190, 6.4653693], // SW (lng, lat)
-  [7.5321792, 6.4732641], // NE (lng, lat)
+  [7.5243190, 6.4653693],
+  [7.5321792, 6.4732641],
 ];
 
-// ------------------------
-// MapView
-// ------------------------
 const MapView = ({
   locations = [],
   onPinClick,
   userLocation,
   userLocationRef,
   headingRef,
-  isNavigating = false,
+  routeActive = false,
+  hideOtherPins = false,
   activeDestination = null,
   routeProfile = "walking",
 }: MapViewProps) => {
@@ -249,12 +250,17 @@ const MapView = ({
   const smoothHeadingRef = useRef<number>(0);
   const hasSmoothHeadingRef = useRef<boolean>(false);
 
-  const navigatingRef = useRef<boolean>(false);
   const lastCameraUpdateRef = useRef<number>(0);
 
+  // ✅ allow user to pan/zoom/rotate freely during routing
+  const followUserRef = useRef<boolean>(true);
+
+  // ✅ follow ONLY after Start (hideOtherPins === true)
+  const startedRef = useRef<boolean>(false);
   useEffect(() => {
-    navigatingRef.current = isNavigating;
-  }, [isNavigating]);
+    startedRef.current = hideOtherPins;
+    if (hideOtherPins) followUserRef.current = true;
+  }, [hideOtherPins]);
 
   // Init map
   useEffect(() => {
@@ -264,15 +270,23 @@ const MapView = ({
       container: mapContainerRef.current,
       style: "mapbox://styles/mapbox/streets-v12",
       center: [7.526536274555406, 6.468611159365743],
-
-      // ✅ allow zoom out more
       zoom: 15,
-      minZoom: 12,  // was 14 (this is what blocked zooming out)
+      minZoom: 12,
       maxZoom: 19,
     });
 
-    map.dragRotate.disable();
-    map.touchZoomRotate.disableRotation();
+    // ✅ rotation enabled
+    map.touchZoomRotate.enable();
+    map.dragRotate.enable();
+
+    // stop snapping back when user interacts (drag/zoom/rotate/pitch)
+    const stopFollowing = () => {
+      followUserRef.current = false;
+    };
+    map.on("dragstart", stopFollowing);
+    map.on("zoomstart", stopFollowing);
+    map.on("rotatestart", stopFollowing);
+    map.on("pitchstart", stopFollowing);
 
     const styleEl = document.createElement("style");
     styleEl.setAttribute("data-gmap", "hide-mapbox-user-dot");
@@ -308,10 +322,7 @@ const MapView = ({
         latitude >= 6.4667163 &&
         latitude <= 6.4719171;
 
-      // ✅ expanded bounds applied when you're inside the original campus area
-      if (insideCampus) {
-        map.setMaxBounds(CAMPUS_BOUNDS_EXPANDED);
-      }
+      if (insideCampus) map.setMaxBounds(CAMPUS_BOUNDS_EXPANDED);
     });
 
     mapRef.current = map;
@@ -329,20 +340,41 @@ const MapView = ({
       } catch {}
 
       document.querySelector('style[data-gmap="hide-mapbox-user-dot"]')?.remove();
+
+      map.off("dragstart", stopFollowing);
+      map.off("zoomstart", stopFollowing);
+      map.off("rotatestart", stopFollowing);
+      map.off("pitchstart", stopFollowing);
+
       map.remove();
       mapRef.current = null;
     };
   }, []);
 
-  // Render POI markers
+  // ------------------------
+  // ✅ Render POI markers
+  // IMPORTANT FIX:
+  // When hideOtherPins is true (Start mode), we ONLY create destination marker.
+  // That prevents the "blink" caused by re-creating markers then hiding them.
+  // ------------------------
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
+    // Clear existing markers
     Object.values(markersByIdRef.current).forEach((m) => m.remove());
     markersByIdRef.current = {};
 
-    locations.forEach((location) => {
+    const destId = activeDestination?.id ? String(activeDestination.id) : null;
+
+    // Decide which locations to actually render
+    const renderList: Location[] = hideOtherPins
+      ? destId
+        ? locations.filter((l) => String(l.id) === destId)
+        : [] // no destination? render none
+      : locations;
+
+    renderList.forEach((location) => {
       const el = document.createElement("div");
       const Icon = getCategoryIcon(location.category);
       const color = getCategoryColor(location.category);
@@ -356,10 +388,6 @@ const MapView = ({
       el.style.justifyContent = "center";
       el.style.border = "2px solid white";
       el.style.cursor = "pointer";
-
-      // ✅ FIX “porthole” look:
-      // Your old shadow was too large/strong and looks like a hole on satellite/streets.
-      // Use a smaller, softer shadow (or set to "none" if you want super clean).
       el.style.boxShadow = "0 2px 6px rgba(0,0,0,0.22)";
 
       el.innerHTML = renderToStaticMarkup(<Icon size={16} color="white" />);
@@ -368,18 +396,9 @@ const MapView = ({
       const marker = new mapboxgl.Marker(el).setLngLat([location.lng, location.lat]).addTo(map);
       markersByIdRef.current[String(location.id)] = marker;
     });
-  }, [locations, onPinClick]);
+  }, [locations, onPinClick, hideOtherPins, activeDestination]);
 
-  // hide markers in navigation
-  useEffect(() => {
-    const destId = activeDestination?.id ? String(activeDestination.id) : null;
-    Object.entries(markersByIdRef.current).forEach(([id, marker]) => {
-      const shouldShow = !isNavigating || (destId && id === destId);
-      marker.getElement().style.display = shouldShow ? "flex" : "none";
-    });
-  }, [isNavigating, activeDestination]);
-
-  // RAF loop (reads refs => no React re-render cost)
+  // RAF loop: puck + cone + optional follow
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -456,6 +475,7 @@ const MapView = ({
 
         const now = performance.now();
 
+        // cone updates
         if (map.isStyleLoaded() && now - lastVizUpdateRef.current > 80) {
           lastVizUpdateRef.current = now;
 
@@ -492,7 +512,8 @@ const MapView = ({
           }
         }
 
-        if (navigatingRef.current) {
+        // follow only after Start, only if user hasn't interacted
+        if (startedRef.current && followUserRef.current) {
           const camNow = performance.now();
           if (camNow - lastCameraUpdateRef.current > 260) {
             lastCameraUpdateRef.current = camNow;
@@ -520,12 +541,12 @@ const MapView = ({
     };
   }, [userLocationRef, userLocation, headingRef]);
 
-  // Route updates (throttled)
+  // Route updates
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    if (!isNavigating) {
+    if (!routeActive) {
       removeRouteLayer(map);
       return;
     }
@@ -534,7 +555,7 @@ const MapView = ({
     if (!pos || !activeDestination) return;
 
     const now = Date.now();
-    if (now - lastRouteUpdateRef.current < 5000) return;
+    if (now - lastRouteUpdateRef.current < 2500) return;
     lastRouteUpdateRef.current = now;
 
     fetchRoute({
@@ -550,14 +571,14 @@ const MapView = ({
         upsertRouteLayer(map, route);
       })
       .catch((err) => console.warn("Route error:", err));
-  }, [isNavigating, userLocation, activeDestination, routeProfile, userLocationRef]);
+  }, [routeActive, userLocation, activeDestination, routeProfile, userLocationRef]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    if (isNavigating) lastRouteUpdateRef.current = 0;
+    if (routeActive) lastRouteUpdateRef.current = 0;
     else removeRouteLayer(map);
-  }, [isNavigating, activeDestination?.id]);
+  }, [routeActive, activeDestination?.id]);
 
   return (
     <div className="absolute inset-0 gmap">
