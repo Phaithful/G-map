@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Users/-/Documents/G-Map/src -type d -not -path *node_modules* -not -path *venv*)",
+      "Bash(node scripts/buildGraph.js)",
+      "Bash(node -e \":*)",
+      "Bash(xargs grep *)",
+      "Bash(node -e \"const icons = require\\('/c/Users/-/Documents/G-Map/node_modules/lucide-react'\\); const names = Object.keys\\(icons\\).filter\\(k => /check|party|trophy|star|spark|flag|award|confetti|celebrate/i.test\\(k\\)\\); console.log\\(names.slice\\(0,30\\)\\);\")",
+      "Bash(npx tsc *)",
+      "Bash(node scripts/mergeBuildings.js)",
+      "Bash(mv 'C:/Users/-/Documents/G-Map/scripts/mergeBuildings.js' 'C:/Users/-/Documents/G-Map/scripts/mergeBuildings.cjs')",
+      "Bash(node 'C:/Users/-/Documents/G-Map/scripts/mergeBuildings.cjs')",
+      "PowerShell(Get-Item *)",
+      "Bash(node scripts/buildCampusGraph.cjs)",
+      "Bash(node -e ' *)"
+    ]
+  }
+}
