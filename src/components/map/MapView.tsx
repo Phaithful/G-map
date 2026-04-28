@@ -1,5 +1,5 @@
 // src/components/map/MapView.tsx
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { Location } from "../../types";
@@ -15,6 +15,10 @@ import {
   ShoppingBag,
 } from "lucide-react";
 
+import { buildCampusRouteGeoJSON, buildRouteSteps } from "../../lib/campusRouting";
+import type { CampusGraph, RouteStep } from "../../lib/campusRouting";
+import campusGraph from "../../data/campusGraph.json";
+
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
 interface MapViewProps {
@@ -27,17 +31,15 @@ interface MapViewProps {
 
   headingRef?: React.MutableRefObject<number | null>;
 
-  /** show route as soon as "Get Directions" opens */
   routeActive?: boolean;
-
-  /**
-   * ✅ Start mode: hide every POI marker except destination.
-   * Markers MUST stay hidden until Exit.
-   */
   hideOtherPins?: boolean;
 
   activeDestination?: Location | null;
   routeProfile?: "walking" | "driving" | "cycling";
+
+  onArrive?: (destination: Location) => void;
+  onProgress?: (info: { distanceM: number; durationS: number; stepIndex: number }) => void;
+  onOffRoute?: () => void;
 }
 
 // ------------------------
@@ -72,72 +74,14 @@ const getCategoryColor = (category: string) => {
 };
 
 // ------------------------
-// Helpers (Routing)
-// ------------------------
-const ROUTE_SOURCE_ID = "gmap-route-source";
-const ROUTE_LAYER_ID = "gmap-route-layer";
-
-async function fetchRoute(args: {
-  from: { lng: number; lat: number };
-  to: { lng: number; lat: number };
-  profile: "walking" | "driving" | "cycling";
-}) {
-  const { from, to, profile } = args;
-  const token = mapboxgl.accessToken;
-
-  const url =
-    `https://api.mapbox.com/directions/v5/mapbox/${profile}/` +
-    `${from.lng},${from.lat};${to.lng},${to.lat}` +
-    `?geometries=geojson&overview=full&steps=false&access_token=${token}`;
-
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Failed to fetch route");
-  const data = await res.json();
-
-  const route = data?.routes?.[0]?.geometry;
-  if (!route) throw new Error("No route found");
-  return route;
-}
-
-function upsertRouteLayer(map: mapboxgl.Map, routeGeometry: any) {
-  const feature = {
-    type: "Feature",
-    properties: {},
-    geometry: routeGeometry,
-  } as const;
-
-  const existing = map.getSource(ROUTE_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
-  if (existing) {
-    existing.setData(feature as any);
-    return;
-  }
-
-  map.addSource(ROUTE_SOURCE_ID, { type: "geojson", data: feature as any });
-
-  map.addLayer({
-    id: ROUTE_LAYER_ID,
-    type: "line",
-    source: ROUTE_SOURCE_ID,
-    layout: { "line-join": "round", "line-cap": "round" },
-    paint: {
-      "line-width": 5,
-      "line-opacity": 0.95,
-      "line-color": "#2563eb",
-    },
-  });
-}
-
-function removeRouteLayer(map: mapboxgl.Map) {
-  if (map.getLayer(ROUTE_LAYER_ID)) map.removeLayer(ROUTE_LAYER_ID);
-  if (map.getSource(ROUTE_SOURCE_ID)) map.removeSource(ROUTE_SOURCE_ID);
-}
-
-// ------------------------
 // Helpers (Geo / Cone)
 // ------------------------
 const USER_CONE_SOURCE_ID = "gmap-user-cone-source";
 const USER_CONE_LAYER_ID = "gmap-user-cone-layer";
 const USER_CONE_OUTLINE_ID = "gmap-user-cone-outline-layer";
+
+const BUILDINGS_SOURCE_ID = "gmap-buildings-source";
+const BUILDINGS_LAYER_ID = "gmap-buildings-3d-layer";
 
 const toRad = (deg: number) => (deg * Math.PI) / 180;
 const toDeg = (rad: number) => (rad * 180) / Math.PI;
@@ -214,10 +158,201 @@ function approxMeters(a: { lat: number; lng: number }, b: { lat: number; lng: nu
 }
 
 // ------------------------
+// ✅ Distance helper (used for dotted + arrival)
+// ------------------------
+function haversineMeters(a: { lng: number; lat: number }, b: { lng: number; lat: number }) {
+  const R = 6371000;
+  const φ1 = toRad(a.lat);
+  const φ2 = toRad(b.lat);
+  const dφ = toRad(b.lat - a.lat);
+  const dλ = toRad(b.lng - a.lng);
+
+  const x =
+    Math.sin(dφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(dλ / 2) ** 2;
+
+  return 2 * R * Math.asin(Math.sqrt(x));
+}
+
+// ------------------------
+// ✅ Curvy dotted connector (presentation)
+// ------------------------
+function mulberry32(seed: number) {
+  return function rand() {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function clamp(n: number, a: number, b: number) {
+  return Math.max(a, Math.min(b, n));
+}
+
+function makeCurvyConnector(args: {
+  from: { lng: number; lat: number };
+  to: { lng: number; lat: number };
+  seed: number;
+}) {
+  const { from, to, seed } = args;
+  const rand = mulberry32(seed);
+
+  const dist = haversineMeters(from, to);
+  const points = clamp(Math.round(dist / 25) + 6, 8, 14);
+  const ampMax = clamp(dist * 0.18, 10, 40);
+
+  const lat0 = (from.lat + to.lat) / 2;
+  const mToLat = 1 / 111320;
+  const mToLng = 1 / (111320 * Math.cos(toRad(lat0)));
+
+  const dx = (to.lng - from.lng) / mToLng;
+  const dy = (to.lat - from.lat) / mToLat;
+  const len = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+
+  const px = -dy / len;
+  const py = dx / len;
+
+  const bend1 = (rand() * 2 - 1) * 0.9;
+  const bend2 = (rand() * 2 - 1) * 0.9;
+
+  const coords: Array<[number, number]> = [];
+  coords.push([from.lng, from.lat]);
+
+  for (let i = 1; i < points - 1; i++) {
+    const t = i / (points - 1);
+
+    const baseLng = from.lng + (to.lng - from.lng) * t;
+    const baseLat = from.lat + (to.lat - from.lat) * t;
+
+    const envelope = Math.sin(Math.PI * t);
+    const wave =
+      Math.sin(t * Math.PI * 1.0 + bend1) * 0.65 +
+      Math.sin(t * Math.PI * 2.0 + bend2) * 0.35;
+
+    const offsetM = envelope * ampMax * wave;
+
+    coords.push([
+      baseLng + px * offsetM * mToLng,
+      baseLat + py * offsetM * mToLat,
+    ]);
+  }
+
+  coords.push([to.lng, to.lat]);
+  return coords;
+}
+
+// ------------------------
+// ✅ Routing source (single source, 2 layers)
+// ------------------------
+const ROUTE_SOURCE_ID = "gmap-route-source";
+const ROUTE_SOLID_LAYER_ID = "gmap-route-solid-layer";
+const ROUTE_DOT_LAYER_ID = "gmap-route-dot-layer";
+
+function upsertRouteCollection(
+  map: mapboxgl.Map,
+  args: {
+    solid?: Array<[number, number]>;
+    dottedSegments?: Array<Array<[number, number]>>;
+  },
+) {
+  const features: any[] = [];
+
+  if (args.solid && args.solid.length >= 2) {
+    features.push({
+      type: "Feature",
+      properties: { kind: "solid" },
+      geometry: { type: "LineString", coordinates: args.solid },
+    });
+  }
+
+  if (args.dottedSegments && args.dottedSegments.length) {
+    for (const seg of args.dottedSegments) {
+      if (!seg || seg.length < 2) continue;
+      features.push({
+        type: "Feature",
+        properties: { kind: "dotted" },
+        geometry: { type: "LineString", coordinates: seg },
+      });
+    }
+  }
+
+  const fc = { type: "FeatureCollection", features };
+
+  const existing = map.getSource(ROUTE_SOURCE_ID) as mapboxgl.GeoJSONSource | undefined;
+  if (existing) {
+    existing.setData(fc as any);
+    return;
+  }
+
+  map.addSource(ROUTE_SOURCE_ID, { type: "geojson", data: fc as any });
+
+  map.addLayer({
+    id: ROUTE_SOLID_LAYER_ID,
+    type: "line",
+    source: ROUTE_SOURCE_ID,
+    filter: ["==", ["get", "kind"], "solid"],
+    layout: { "line-join": "round", "line-cap": "round" },
+    paint: { "line-width": 5, "line-opacity": 0.95, "line-color": "#2563eb" },
+  });
+
+  map.addLayer({
+    id: ROUTE_DOT_LAYER_ID,
+    type: "line",
+    source: ROUTE_SOURCE_ID,
+    filter: ["==", ["get", "kind"], "dotted"],
+    layout: { "line-join": "round", "line-cap": "round" },
+    paint: {
+      "line-width": 5,
+      "line-opacity": 0.95,
+      "line-color": "#2563eb",
+      "line-dasharray": [0.8, 1.25],
+    },
+  });
+}
+
+function removeRoute(map: mapboxgl.Map) {
+  if (map.getLayer(ROUTE_DOT_LAYER_ID)) map.removeLayer(ROUTE_DOT_LAYER_ID);
+  if (map.getLayer(ROUTE_SOLID_LAYER_ID)) map.removeLayer(ROUTE_SOLID_LAYER_ID);
+  if (map.getSource(ROUTE_SOURCE_ID)) map.removeSource(ROUTE_SOURCE_ID);
+}
+
+// ------------------------
+// Mapbox directions (with snapped endpoints)
+// ------------------------
+async function fetchDirectionsWithSnap(args: {
+  from: { lng: number; lat: number };
+  to: { lng: number; lat: number };
+  profile: "walking" | "driving" | "cycling";
+}) {
+  const { from, to, profile } = args;
+  const token = mapboxgl.accessToken;
+
+  const url =
+    `https://api.mapbox.com/directions/v5/mapbox/${profile}/` +
+    `${from.lng},${from.lat};${to.lng},${to.lat}` +
+    `?geometries=geojson&overview=full&steps=false&access_token=${token}`;
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch route");
+  const data = await res.json();
+
+  const coords = data?.routes?.[0]?.geometry?.coordinates as Array<[number, number]> | undefined;
+  const w0 = data?.waypoints?.[0]?.location as [number, number] | undefined;
+  const w1 = data?.waypoints?.[1]?.location as [number, number] | undefined;
+
+  if (!coords || coords.length < 2 || !w0 || !w1) throw new Error("No route found");
+
+  return {
+    coords,
+    snappedStart: { lng: w0[0], lat: w0[1] },
+    snappedEnd: { lng: w1[0], lat: w1[1] },
+  };
+}
+
+// ------------------------
 // Campus bounds
 // ------------------------
 const CAMPUS_BOUNDS_EXPANDED: [[number, number], [number, number]] = [
-  [7.5243190, 6.4653693],
+  [7.524319, 6.4653693],
   [7.5321792, 6.4732641],
 ];
 
@@ -231,6 +366,9 @@ const MapView = ({
   hideOtherPins = false,
   activeDestination = null,
   routeProfile = "walking",
+  onArrive,
+  onProgress,
+  onOffRoute,
 }: MapViewProps) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -252,15 +390,50 @@ const MapView = ({
 
   const lastCameraUpdateRef = useRef<number>(0);
 
-  // ✅ allow user to pan/zoom/rotate freely during routing
   const followUserRef = useRef<boolean>(true);
-
-  // ✅ follow ONLY after Start (hideOtherPins === true)
   const startedRef = useRef<boolean>(false);
+
+  // ✅ persistent seed: changes ONLY when you “search a new location”
+  const routeSeedRef = useRef<number>(123456789);
+  const lastDestIdRef = useRef<string | null>(null);
+  const lastRouteActiveRef = useRef<boolean>(false);
+
+  // ✅ arrival refs
+  const arrivedRef = useRef<boolean>(false);
+  const lastArrivalCheckRef = useRef<number>(0);
+
+  // ✅ progress & off-route refs
+  const routeCoordsRef = useRef<[number, number][]>([]);
+  const routeStepsRef = useRef<RouteStep[]>([]);
+  const lastProgressUpdateRef = useRef<number>(0);
+  const lastOffRouteCheckRef = useRef<number>(0);
+  const offRouteCooldownRef = useRef<number>(0);
+
   useEffect(() => {
     startedRef.current = hideOtherPins;
     if (hideOtherPins) followUserRef.current = true;
   }, [hideOtherPins]);
+
+  // ✅ Update the seed ONLY when route starts OR destination changes
+  // Also reset "arrived" state here.
+  useEffect(() => {
+    const destId = activeDestination?.id ? String(activeDestination.id) : null;
+
+    const routeJustStarted = routeActive && !lastRouteActiveRef.current;
+    const destinationChanged = routeActive && destId && destId !== lastDestIdRef.current;
+
+    if (routeJustStarted || destinationChanged) {
+      routeSeedRef.current = ((Date.now() ^ (Math.random() * 1e9)) >>> 0) || 123456789;
+      arrivedRef.current = false; // ✅ reset arrival for new navigation
+    }
+
+    if (!routeActive) {
+      arrivedRef.current = false; // ✅ reset when routing stops
+    }
+
+    lastRouteActiveRef.current = routeActive;
+    lastDestIdRef.current = destId;
+  }, [routeActive, activeDestination?.id]);
 
   // Init map
   useEffect(() => {
@@ -275,11 +448,9 @@ const MapView = ({
       maxZoom: 19,
     });
 
-    // ✅ rotation enabled
     map.touchZoomRotate.enable();
     map.dragRotate.enable();
 
-    // stop snapping back when user interacts (drag/zoom/rotate/pitch)
     const stopFollowing = () => {
       followUserRef.current = false;
     };
@@ -287,6 +458,20 @@ const MapView = ({
     map.on("zoomstart", stopFollowing);
     map.on("rotatestart", stopFollowing);
     map.on("pitchstart", stopFollowing);
+
+    // Auto-pitch: smoothly tilt into 3D after the zoom gesture settles
+    const handleZoomPitch = () => {
+      const z = map.getZoom();
+      let pitch = 0;
+      if (z >= 17.5) {
+        pitch = 50;
+      } else if (z > 15.5) {
+        pitch = ((z - 15.5) / 2) * 50;
+      }
+      // easeTo lets Mapbox animate pitch without fighting the zoom gesture
+      map.easeTo({ pitch, duration: 500, easing: (t) => t * (2 - t) });
+    };
+    map.on("zoomend", handleZoomPitch);
 
     const styleEl = document.createElement("style");
     styleEl.setAttribute("data-gmap", "hide-mapbox-user-dot");
@@ -311,13 +496,43 @@ const MapView = ({
     });
 
     map.addControl(geolocate, "top-left");
-    map.on("load", () => geolocate.trigger());
+    map.on("load", () => {
+      geolocate.trigger();
+
+      // Load campus building footprints and render as 3D extrusions
+      fetch("/buildings-merged.geojson")
+        .then((r) => r.json())
+        .then((data) => {
+          if (map.getSource(BUILDINGS_SOURCE_ID)) return;
+          map.addSource(BUILDINGS_SOURCE_ID, { type: "geojson", data });
+          map.addLayer({
+            id: BUILDINGS_LAYER_ID,
+            type: "fill-extrusion",
+            source: BUILDINGS_SOURCE_ID,
+            paint: {
+              // Subtle sage-green tint to match the app's colour palette
+              "fill-extrusion-color": "#c8d4bf",
+              "fill-extrusion-height": ["get", "height"],
+              "fill-extrusion-base": 0,
+              // Fade buildings in as the user zooms toward 3D range
+              "fill-extrusion-opacity": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                15.5, 0,
+                16.5, 0.82,
+              ],
+            },
+          });
+        })
+        .catch(() => {}); // silent – map still works without 3D buildings
+    });
 
     geolocate.on("geolocate", (e) => {
       const { latitude, longitude } = e.coords;
 
       const insideCampus =
-        longitude >= 7.5256750 &&
+        longitude >= 7.525675 &&
         longitude <= 7.5308232 &&
         latitude >= 6.4667163 &&
         latitude <= 6.4719171;
@@ -339,39 +554,42 @@ const MapView = ({
         if (map.getSource(USER_CONE_SOURCE_ID)) map.removeSource(USER_CONE_SOURCE_ID);
       } catch {}
 
+      try {
+        removeRoute(map);
+      } catch {}
+
       document.querySelector('style[data-gmap="hide-mapbox-user-dot"]')?.remove();
 
       map.off("dragstart", stopFollowing);
       map.off("zoomstart", stopFollowing);
       map.off("rotatestart", stopFollowing);
       map.off("pitchstart", stopFollowing);
+      map.off("zoomend", handleZoomPitch);
+
+      try {
+        if (map.getLayer(BUILDINGS_LAYER_ID)) map.removeLayer(BUILDINGS_LAYER_ID);
+        if (map.getSource(BUILDINGS_SOURCE_ID)) map.removeSource(BUILDINGS_SOURCE_ID);
+      } catch {}
 
       map.remove();
       mapRef.current = null;
     };
   }, []);
 
-  // ------------------------
-  // ✅ Render POI markers
-  // IMPORTANT FIX:
-  // When hideOtherPins is true (Start mode), we ONLY create destination marker.
-  // That prevents the "blink" caused by re-creating markers then hiding them.
-  // ------------------------
+  // Render POI markers
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    // Clear existing markers
     Object.values(markersByIdRef.current).forEach((m) => m.remove());
     markersByIdRef.current = {};
 
     const destId = activeDestination?.id ? String(activeDestination.id) : null;
 
-    // Decide which locations to actually render
     const renderList: Location[] = hideOtherPins
       ? destId
         ? locations.filter((l) => String(l.id) === destId)
-        : [] // no destination? render none
+        : []
       : locations;
 
     renderList.forEach((location) => {
@@ -398,7 +616,7 @@ const MapView = ({
     });
   }, [locations, onPinClick, hideOtherPins, activeDestination]);
 
-  // RAF loop: puck + cone + optional follow
+  // RAF loop: puck + cone + optional follow + ✅ arrival detection
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -458,6 +676,108 @@ const MapView = ({
         displayPosRef.current = next;
         puckMarkerRef.current.setLngLat([next.lng, next.lat]);
 
+        // ✅ arrival check (fast but throttled, and only once)
+        if (routeActive && activeDestination && !arrivedRef.current) {
+          const now = performance.now();
+          if (now - lastArrivalCheckRef.current > 500) {
+            lastArrivalCheckRef.current = now;
+
+            const dist = haversineMeters(
+              { lng: next.lng, lat: next.lat },
+              { lng: activeDestination.lng, lat: activeDestination.lat },
+            );
+
+            const arrivalRadius =
+              routeProfile === "driving" ? 30 : routeProfile === "cycling" ? 22 : 18;
+
+            if (dist <= arrivalRadius) {
+              arrivedRef.current = true;
+
+              // vibrate if supported (quick feedback)
+              try {
+                navigator.vibrate?.([120, 80, 120]);
+              } catch {}
+
+              // let parent show toast/modal
+              onArrive?.(activeDestination);
+
+              // broadcast event for global UI listeners (optional)
+              window.dispatchEvent(
+                new CustomEvent("gmap:arrived", {
+                  detail: { destination: activeDestination, distanceMeters: dist },
+                }),
+              );
+
+              // fallback if no UI handler
+              if (!onArrive) {
+                alert(`You have arrived at ${activeDestination.name}`);
+              }
+            }
+          }
+        }
+
+        // ✅ Live progress tracking (every 2 s)
+        if (routeActive && !arrivedRef.current && routeCoordsRef.current.length > 1) {
+          const nowMs = performance.now();
+          if (nowMs - lastProgressUpdateRef.current > 2000) {
+            lastProgressUpdateRef.current = nowMs;
+
+            const rc = routeCoordsRef.current;
+            // Find segment of route closest to user
+            let minDist = Infinity;
+            let closestSegIdx = 0;
+            for (let i = 0; i < rc.length - 1; i++) {
+              const ax = rc[i][0], ay = rc[i][1];
+              const bx = rc[i + 1][0], by = rc[i + 1][1];
+              const dx = bx - ax, dy = by - ay;
+              const lenSq = dx * dx + dy * dy;
+              const t = lenSq > 0
+                ? Math.max(0, Math.min(1, ((next.lng - ax) * dx + (next.lat - ay) * dy) / lenSq))
+                : 0;
+              const px = ax + t * dx, py = ay + t * dy;
+              const d = haversineMeters({ lng: next.lng, lat: next.lat }, { lng: px, lat: py });
+              if (d < minDist) { minDist = d; closestSegIdx = i; }
+            }
+
+            // Sum remaining distance from closest point to destination
+            const projEnd = rc[closestSegIdx + 1];
+            let remaining = haversineMeters(
+              { lng: next.lng, lat: next.lat },
+              { lng: projEnd[0], lat: projEnd[1] },
+            );
+            for (let i = closestSegIdx + 1; i < rc.length - 1; i++) {
+              remaining += haversineMeters(
+                { lng: rc[i][0], lat: rc[i][1] },
+                { lng: rc[i + 1][0], lat: rc[i + 1][1] },
+              );
+            }
+
+            // Determine current step by finding the last step whose startCoord we've passed
+            const steps = routeStepsRef.current;
+            let stepIndex = 0;
+            for (let s = 0; s < steps.length - 1; s++) {
+              const sc = steps[s].startCoord;
+              const dStep = haversineMeters({ lng: next.lng, lat: next.lat }, { lng: sc[0], lat: sc[1] });
+              const dNext = haversineMeters(
+                { lng: next.lng, lat: next.lat },
+                { lng: steps[s + 1].startCoord[0], lat: steps[s + 1].startCoord[1] },
+              );
+              if (dNext < dStep) stepIndex = s + 1;
+            }
+
+            onProgress?.({ distanceM: remaining, durationS: remaining / 1.35, stepIndex });
+
+            // ✅ Off-route detection (every 3 s, with 30 s cooldown after trigger)
+            if (nowMs - lastOffRouteCheckRef.current > 3000) {
+              lastOffRouteCheckRef.current = nowMs;
+              if (minDist > 45 && nowMs > offRouteCooldownRef.current) {
+                offRouteCooldownRef.current = nowMs + 30000;
+                onOffRoute?.();
+              }
+            }
+          }
+        }
+
         const raw = headingRef?.current ?? null;
         if (typeof raw === "number") {
           if (!hasSmoothHeadingRef.current) {
@@ -475,7 +795,6 @@ const MapView = ({
 
         const now = performance.now();
 
-        // cone updates
         if (map.isStyleLoaded() && now - lastVizUpdateRef.current > 80) {
           lastVizUpdateRef.current = now;
 
@@ -512,7 +831,6 @@ const MapView = ({
           }
         }
 
-        // follow only after Start, only if user hasn't interacted
         if (startedRef.current && followUserRef.current) {
           const camNow = performance.now();
           if (camNow - lastCameraUpdateRef.current > 260) {
@@ -539,15 +857,21 @@ const MapView = ({
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     };
-  }, [userLocationRef, userLocation, headingRef]);
+  }, [userLocationRef, userLocation, headingRef, routeActive, activeDestination, routeProfile, onArrive, onProgress, onOffRoute]);
 
-  // Route updates
+  // ------------------------
+  // Route updates:
+  // Solid Mapbox route + dotted segments for off-road parts.
+  // Dotted shape stays stable because we reuse routeSeedRef.current
+  // ------------------------
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
     if (!routeActive) {
-      removeRouteLayer(map);
+      removeRoute(map);
+      routeCoordsRef.current = [];
+      routeStepsRef.current = [];
       return;
     }
 
@@ -558,26 +882,64 @@ const MapView = ({
     if (now - lastRouteUpdateRef.current < 2500) return;
     lastRouteUpdateRef.current = now;
 
-    fetchRoute({
-      from: { lng: pos.lng, lat: pos.lat },
-      to: { lng: activeDestination.lng, lat: activeDestination.lat },
-      profile: routeProfile,
-    })
-      .then((route) => {
-        if (!map.isStyleLoaded()) {
-          map.once("load", () => upsertRouteLayer(map, route));
-          return;
-        }
-        upsertRouteLayer(map, route);
-      })
-      .catch((err) => console.warn("Route error:", err));
+    const from = { lng: pos.lng, lat: pos.lat };
+    const to = { lng: activeDestination.lng, lat: activeDestination.lat };
+
+    const seed = routeSeedRef.current;
+
+    const draw = (
+      solid?: Array<[number, number]>,
+      dottedSegments?: Array<Array<[number, number]>>,
+    ) => {
+      const fn = () => upsertRouteCollection(map, { solid, dottedSegments });
+      if (!map.isStyleLoaded()) map.once("load", fn);
+      else fn();
+    };
+
+    (async () => {
+      // ── Tier 1: Campus graph A* (primary) ───────────────────────────
+      const campusResult = buildCampusRouteGeoJSON({
+        graph: campusGraph as CampusGraph,
+        from,
+        to,
+        maxSnapMeters: 250,
+      });
+
+      if (campusResult) {
+        const coords = campusResult.geometry.coordinates as Array<[number, number]>;
+        routeCoordsRef.current = coords;
+        routeStepsRef.current = buildRouteSteps(coords);
+        draw(coords, undefined);
+        return;
+      }
+
+      // ── Tier 2: Mapbox Directions API (off-campus fallback) ──────────
+      try {
+        const { coords } = await fetchDirectionsWithSnap({
+          from,
+          to,
+          profile: routeProfile,
+        });
+        routeCoordsRef.current = coords;
+        routeStepsRef.current = buildRouteSteps(coords);
+        draw(coords, undefined);
+      } catch (e) {
+        // ── Tier 3: Straight line last resort ───────────────────────────
+        const straightLine: Array<[number, number]> = [
+          [from.lng, from.lat],
+          [to.lng, to.lat],
+        ];
+        draw(undefined, [straightLine]);
+        console.warn("Route: straight-line fallback used:", e);
+      }
+    })();
   }, [routeActive, userLocation, activeDestination, routeProfile, userLocationRef]);
 
+  // reset route throttling when toggled / destination changes
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     if (routeActive) lastRouteUpdateRef.current = 0;
-    else removeRouteLayer(map);
   }, [routeActive, activeDestination?.id]);
 
   return (

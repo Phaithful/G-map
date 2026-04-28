@@ -10,12 +10,16 @@ import type { Location } from "../types";
 import LocationCard from "../components/map/LocationCard";
 import LocationDetails from "../components/map/LocationDetails";
 import NavigationMode from "../components/map/NavigationMode";
+import ArrivalModal from "../components/map/ArrivalModal";
 import HamburgerMenu from "../components/map/HamburgerMenu";
 import ProfilePage from "../components/pages/ProfilePage";
 import SavedLocationsPage from "../components/pages/SavedLocationsPage";
 import SettingsPage from "../components/pages/SettingsPage";
 import campusLocations from "../data/locations";
 import { useAuthUser } from "@/hooks/useAuthUser";
+import { buildCampusRouteGeoJSON, buildRouteSteps, estimateWalkSeconds } from "../lib/campusRouting";
+import type { RouteStep } from "../lib/campusRouting";
+import campusGraph from "../data/campusGraph.json";
 
 const normalizeDeg = (deg: number) => ((deg % 360) + 360) % 360;
 
@@ -44,7 +48,22 @@ function needsIOSMotionPermission() {
 
 const Index = () => {
   const navigate = useNavigate();
+
+  //------------------------------------------------------------------------------
+  // diasable authentication
   const { logout } = useAuthUser();
+
+  // ✅ UPDATED: include isAuthenticated for auth-guard
+  // const { logout, isAuthenticated } = useAuthUser();
+
+  // ✅ UPDATED: auth guard (logs out + redirects if not authenticated)
+  //-------------------- comment out ---------------------------------
+  // useEffect(() => {
+  //   if (!isAuthenticated) {
+  //     logout();
+  //     navigate("/login", { replace: true });
+  //   }
+  // }, [isAuthenticated, logout, navigate]);
 
   // ✅ REFS (no re-render spam)
   const userLocationRef = useRef<{ lat: number; lng: number } | null>(null);
@@ -59,6 +78,11 @@ const Index = () => {
   // ✅ Navigation split
   const [isNavOpen, setIsNavOpen] = useState(false); // preview open (Get Directions)
   const [hasStartedNav, setHasStartedNav] = useState(false); // Start pressed
+  const [arrivedLocation, setArrivedLocation] = useState<Location | null>(null);
+  const [showArrivalModal, setShowArrivalModal] = useState(false);
+  const [routeSteps, setRouteSteps] = useState<RouteStep[]>([]);
+  const [navProgress, setNavProgress] = useState<{ distanceM: number; durationS: number; stepIndex: number } | null>(null);
+  const [isRerouting, setIsRerouting] = useState(false);
 
   // ✅ Accurate route numbers
   const [routeInfo, setRouteInfo] = useState<{ distance: number; duration: number } | null>(null);
@@ -71,6 +95,23 @@ const Index = () => {
   }) {
     const { from, to, profile } = args;
 
+    // ── Tier 1: Campus graph ─────────────────────────────────────────
+    const campusResult = buildCampusRouteGeoJSON({
+      graph: campusGraph as any,
+      from,
+      to,
+      maxSnapMeters: 250,
+    });
+
+    if (campusResult) {
+      setRouteSteps(buildRouteSteps(campusResult.coords));
+      return {
+        distance: campusResult.distanceMeters,
+        duration: estimateWalkSeconds(campusResult.distanceMeters),
+      };
+    }
+
+    // ── Tier 2: Mapbox API ───────────────────────────────────────────
     const url =
       `https://api.mapbox.com/directions/v5/mapbox/${profile}/` +
       `${from.lng},${from.lat};${to.lng},${to.lat}` +
@@ -286,6 +327,57 @@ const Index = () => {
     setIsNavOpen(true); // preview open
     setHasStartedNav(false); // not started yet
   }, []);
+
+  const handleArrive = useCallback((destination: Location) => {
+    setArrivedLocation(destination);
+    setShowArrivalModal(true);
+  }, []);
+
+  const handleDismissArrival = useCallback(() => {
+    setShowArrivalModal(false);
+    setIsNavOpen(false);
+    setHasStartedNav(false);
+    setSelectedLocation(null);
+    setRouteInfo(null);
+    setRouteSteps([]);
+    setNavProgress(null);
+  }, []);
+
+  const handleArrivalNewSearch = useCallback(() => {
+    setShowArrivalModal(false);
+    setArrivedLocation(null);
+    setIsNavOpen(false);
+    setHasStartedNav(false);
+    setSelectedLocation(null);
+    setRouteInfo(null);
+    setRouteSteps([]);
+    setNavProgress(null);
+  }, []);
+
+  const handleNavProgress = useCallback(
+    (info: { distanceM: number; durationS: number; stepIndex: number }) => {
+      setNavProgress(info);
+    },
+    [],
+  );
+
+  const handleOffRoute = useCallback(async () => {
+    if (isRerouting || !selectedLocation) return;
+    const pos = userLocationRef.current ?? userLocation;
+    if (!pos) return;
+    setIsRerouting(true);
+    try {
+      const info = await fetchRouteInfo({
+        from: { lng: pos.lng, lat: pos.lat },
+        to: { lng: selectedLocation.lng, lat: selectedLocation.lat },
+        profile: "walking",
+      });
+      setRouteInfo(info);
+      setNavProgress(null);
+    } finally {
+      setIsRerouting(false);
+    }
+  }, [isRerouting, selectedLocation, userLocation]);
 
   const handleSaveLocation = useCallback(() => {
     if (!selectedLocation) return;
@@ -510,6 +602,9 @@ const Index = () => {
         hideOtherPins={hasStartedNav} // ✅ hide pins only after Start
         activeDestination={selectedLocation}
         routeProfile="walking"
+        onArrive={handleArrive}
+        onProgress={handleNavProgress}
+        onOffRoute={handleOffRoute}
       />
 
       {/* Only show search/menu/bottomsheet when NOT in nav preview */}
@@ -568,7 +663,7 @@ const Index = () => {
 
       {/* ✅ Never show 2 bottom sheets at once:
           if LocationDetails is open, hide nav UI */}
-      {!showLocationDetails && (
+      {!showLocationDetails && !showArrivalModal && (
         <NavigationMode
           isActive={isNavOpen}
           hasStarted={hasStartedNav}
@@ -589,8 +684,19 @@ const Index = () => {
             setHasStartedNav(true);
           }}
           onMenuNavigate={handleMenuNavigate}
+          steps={routeSteps}
+          currentStepIndex={navProgress?.stepIndex ?? 0}
+          remainingDistanceM={navProgress?.distanceM ?? null}
+          isRerouting={isRerouting}
         />
       )}
+
+      <ArrivalModal
+        location={arrivedLocation}
+        isOpen={showArrivalModal}
+        onDismiss={handleDismissArrival}
+        onNewSearch={handleArrivalNewSearch}
+      />
     </div>
   );
 };

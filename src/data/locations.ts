@@ -1495,8 +1495,8 @@ export const campusLocations: Location[] = [
     id: "134",
     name: "DR. U.F. OKEBANAMA",
     category: "offices",
-    lat: 6.468900,
-    lng: 7.526800,
+    lat: 6.468862,
+    lng: 7.526016,
     distance: "9 min",
     description: "Computer Science HOD & SUB-DEAN Office (Dr. U.F. Okebanama)",
     openingHours: "Mon-Fri: 8AM-5PM"
