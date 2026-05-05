@@ -45,33 +45,41 @@ interface MapViewProps {
 // ------------------------
 // Helpers (Pins)
 // ------------------------
-const getCategoryIcon = (category: string) => {
-  const icons: Record<string, typeof GraduationCap> = {
+const CATEGORY_ICONS: Record<string, typeof GraduationCap> = {
     academics: GraduationCap,
-    offices: Building2,
-    hostels: Home,
-    food: Utensils,
-    health: HeartPulse,
-    churches: Church,
-    sports: Dumbbell,
-    shops: ShoppingBag,
-  };
-  return icons[category] || GraduationCap;
+  offices:   Building2,
+  hostels:   Home,
+  food:      Utensils,
+  health:    HeartPulse,
+  churches:  Church,
+  sports:    Dumbbell,
+  shops:     ShoppingBag,
 };
 
-const getCategoryColor = (category: string) => {
-  const colors: Record<string, string> = {
+const CATEGORY_COLORS: Record<string, string> = {
     academics: "#3b82f6",
-    offices: "#64748b",
-    hostels: "#8b5cf6",
-    food: "#f97316",
-    health: "#ef4444",
-    churches: "#d97706",
-    sports: "#10b981",
-    shops: "#ec4899",
+  offices:   "#64748b",
+  hostels:   "#8b5cf6",
+  food:      "#f97316",
+  health:    "#ef4444",
+  churches:  "#d97706",
+  sports:    "#10b981",
+  shops:     "#ec4899",
   };
-  return colors[category] || "#2563eb";
-};
+
+const getCategoryIcon  = (c: string) => CATEGORY_ICONS[c]  || GraduationCap;
+const getCategoryColor = (c: string) => CATEGORY_COLORS[c] || "#2563eb";
+
+// Cache rendered SVG strings — icons never change, so we only call
+// renderToStaticMarkup once per category (8 categories total).
+const _iconHtmlCache = new Map<string, string>();
+function getCategoryIconHtml(category: string): string {
+  if (_iconHtmlCache.has(category)) return _iconHtmlCache.get(category)!;
+  const Icon = getCategoryIcon(category);
+  const html = renderToStaticMarkup(React.createElement(Icon, { size: 16, color: "white" }));
+  _iconHtmlCache.set(category, html);
+  return html;
+}
 
 // ------------------------
 // Helpers (Geo / Cone)
@@ -594,21 +602,14 @@ const MapView = ({
 
     renderList.forEach((location) => {
       const el = document.createElement("div");
-      const Icon = getCategoryIcon(location.category);
       const color = getCategoryColor(location.category);
 
-      el.style.width = "32px";
-      el.style.height = "32px";
-      el.style.borderRadius = "50%";
-      el.style.background = color;
-      el.style.display = "flex";
-      el.style.alignItems = "center";
-      el.style.justifyContent = "center";
-      el.style.border = "2px solid white";
-      el.style.cursor = "pointer";
-      el.style.boxShadow = "0 2px 6px rgba(0,0,0,0.22)";
+      el.style.cssText =
+        "width:32px;height:32px;border-radius:50%;display:flex;align-items:center;" +
+        "justify-content:center;border:2px solid white;cursor:pointer;" +
+        `background:${color};box-shadow:0 2px 6px rgba(0,0,0,0.22);`;
 
-      el.innerHTML = renderToStaticMarkup(<Icon size={16} color="white" />);
+      el.innerHTML = getCategoryIconHtml(location.category);
       el.onclick = () => onPinClick?.(location);
 
       const marker = new mapboxgl.Marker(el).setLngLat([location.lng, location.lat]).addTo(map);
