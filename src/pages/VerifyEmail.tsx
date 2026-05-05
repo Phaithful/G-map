@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "";
 
 const VerifyEmail = () => {
   const [params] = useSearchParams();
@@ -19,15 +19,19 @@ const VerifyEmail = () => {
       return;
     }
 
+    const controller = new AbortController();
+    const timeoutId  = setTimeout(() => controller.abort(), 15_000);
+
     (async () => {
       try {
         const res = await fetch(`${API_BASE}/api/auth/verify-email/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token }),
+          signal: controller.signal,
         });
 
-        const json = await res.json();
+        const json = await res.json().catch(() => ({}));
 
         if (!res.ok) {
           setStatus("error");
@@ -35,19 +39,22 @@ const VerifyEmail = () => {
           return;
         }
 
-        // Auto-login: store tokens
-        localStorage.setItem("accessToken", json.access);
-        localStorage.setItem("refreshToken", json.refresh);
-        localStorage.setItem("user", JSON.stringify(json.user));
+        localStorage.setItem("accessToken",  json.access  ?? "");
+        localStorage.setItem("refreshToken", json.refresh ?? "");
+        localStorage.setItem("user",         JSON.stringify(json.user ?? {}));
 
         setStatus("success");
         setMessage("Email verified. Signing you in...");
-
-        // go home
         setTimeout(() => navigate("/"), 800);
-      } catch {
+      } catch (err: any) {
         setStatus("error");
-        setMessage("Network error. Please try again.");
+        setMessage(
+          err?.name === "AbortError"
+            ? "Request timed out. Please try again."
+            : "Network error. Please try again.",
+        );
+      } finally {
+        clearTimeout(timeoutId);
       }
     })();
   }, [params, navigate]);

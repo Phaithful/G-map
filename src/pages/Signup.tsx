@@ -21,7 +21,7 @@ interface SignupFormData {
   confirmPassword: string;
 }
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -41,6 +41,9 @@ const Signup = () => {
       return;
     }
 
+    const controller = new AbortController();
+    const timeoutId  = setTimeout(() => controller.abort(), 15_000);
+
     try {
       setIsLoading(true);
       setSuccessMessage("");
@@ -50,30 +53,31 @@ const Signup = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: data.name.trim(),
-          email: data.email.trim().toLowerCase(),
+          name:     data.name.trim(),
+          email:    data.email.trim().toLowerCase(),
           password: data.password,
         }),
+        signal: controller.signal,
       });
 
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        const msg = json?.error || json?.detail || "Signup failed. Try again.";
-        form.setError("email", { message: msg });
+        form.setError("email", { message: json?.error || json?.detail || "Signup failed. Try again." });
         return;
       }
 
       setSuccessMessage(
-        "Account created! A verification link has been sent to your email. Please verify to continue."
+        "Account created! A verification link has been sent to your email. Please verify to continue.",
       );
-
       form.reset({ name: "", email: "", password: "", confirmPassword: "" });
-    } catch {
-      form.setError("email", {
-        message: "Network error. Please check your connection and try again.",
-      });
+    } catch (err: any) {
+      const msg = err?.name === "AbortError"
+        ? "Request timed out. Please try again."
+        : "Network error. Please check your connection and try again.";
+      form.setError("email", { message: msg });
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
     }
   };

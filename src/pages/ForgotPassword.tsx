@@ -23,7 +23,7 @@ interface ForgotPasswordFormData {
   email: string;
 }
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -31,12 +31,17 @@ const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [otpValue, setOtpValue] = useState("");
   const [email, setEmail] = useState("");
+  const [otpError, setOtpError] = useState("");
+  const [resendMessage, setResendMessage] = useState("");
 
   const form = useForm<ForgotPasswordFormData>({
     defaultValues: { email: "" },
   });
 
   const onSubmitEmail = async (data: ForgotPasswordFormData) => {
+    const controller = new AbortController();
+    const timeoutId  = setTimeout(() => controller.abort(), 15_000);
+
     try {
       setIsLoading(true);
       form.clearErrors();
@@ -45,23 +50,26 @@ const ForgotPassword = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: data.email }),
+        signal: controller.signal,
       });
 
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        form.setError("email", {
-          message: json?.error || "Failed to send reset code.",
-        });
+        form.setError("email", { message: json?.error || "Failed to send reset code." });
         return;
       }
 
       setEmail(data.email);
       setOtpValue("");
+      setOtpError("");
       setStep("code");
-    } catch {
-      form.setError("email", { message: "Network error. Try again." });
+    } catch (err: any) {
+      form.setError("email", {
+        message: err?.name === "AbortError" ? "Request timed out. Try again." : "Network error. Try again.",
+      });
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
     }
   };
@@ -69,59 +77,72 @@ const ForgotPassword = () => {
   const onSubmitCode = async () => {
     if (otpValue.length !== 6) return;
 
+    const controller = new AbortController();
+    const timeoutId  = setTimeout(() => controller.abort(), 15_000);
+
     try {
       setIsLoading(true);
+      setOtpError("");
 
       const res = await fetch(`${API_BASE}/api/auth/verify-reset-otp/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp: otpValue }),
+        signal: controller.signal,
       });
 
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        // show error nicely under the OTP area by using a basic alert-style approach
-        // (you can replace with toast later)
         setOtpValue("");
-        return alert(json?.error || "Invalid or expired code. Try again.");
+        setOtpError(json?.error || "Invalid or expired code. Please try again.");
+        return;
       }
 
       const resetToken = json.resetToken;
       if (!resetToken) {
-        return alert("Reset token missing. Please resend code.");
+        setOtpError("Reset token missing. Please resend the code.");
+        return;
       }
 
-      // ✅ pass token to reset page
       navigate(`/reset-password?token=${encodeURIComponent(resetToken)}`);
-    } catch {
-      alert("Network error. Try again.");
+    } catch (err: any) {
+      setOtpError(err?.name === "AbortError" ? "Request timed out. Try again." : "Network error. Try again.");
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
     }
   };
 
   const handleResendCode = async () => {
+    const controller = new AbortController();
+    const timeoutId  = setTimeout(() => controller.abort(), 15_000);
+
     try {
       setIsLoading(true);
+      setResendMessage("");
+      setOtpError("");
 
       const res = await fetch(`${API_BASE}/api/auth/forgot-password/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
+        signal: controller.signal,
       });
 
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        alert(json?.error || "Failed to resend code.");
+        setOtpError(json?.error || "Failed to resend code.");
         return;
       }
 
       setOtpValue("");
-    } catch {
-      alert("Network error. Try again.");
+      setResendMessage("A new code has been sent to your email.");
+    } catch (err: any) {
+      setOtpError(err?.name === "AbortError" ? "Request timed out. Try again." : "Network error. Try again.");
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
     }
   };
@@ -142,7 +163,6 @@ const ForgotPassword = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary/40" />
 
-        {/* Branding Overlay */}
         <div className="absolute inset-0 flex flex-col justify-center items-center text-white p-12">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
@@ -166,7 +186,6 @@ const ForgotPassword = () => {
           </motion.div>
         </div>
 
-        {/* Decorative Elements */}
         <div className="absolute top-8 left-8">
           <div className="w-32 h-32 rounded-full bg-white/10 backdrop-blur-sm" />
         </div>
@@ -228,10 +247,7 @@ const ForgotPassword = () => {
           >
             {step === "email" ? (
               <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmitEmail)}
-                  className="space-y-6"
-                >
+                <form onSubmit={form.handleSubmit(onSubmitEmail)} className="space-y-6">
                   <FormField
                     control={form.control}
                     name="email"
@@ -244,9 +260,7 @@ const ForgotPassword = () => {
                     }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-foreground">
-                          Email Address
-                        </FormLabel>
+                        <FormLabel className="text-foreground">Email Address</FormLabel>
                         <FormControl>
                           <Input
                             type="email"
@@ -272,11 +286,7 @@ const ForgotPassword = () => {
             ) : (
               <div className="space-y-6">
                 <div className="flex justify-center">
-                  <InputOTP
-                    maxLength={6}
-                    value={otpValue}
-                    onChange={setOtpValue}
-                  >
+                  <InputOTP maxLength={6} value={otpValue} onChange={setOtpValue}>
                     <InputOTPGroup>
                       <InputOTPSlot index={0} />
                       <InputOTPSlot index={1} />
@@ -287,6 +297,14 @@ const ForgotPassword = () => {
                     </InputOTPGroup>
                   </InputOTP>
                 </div>
+
+                {/* Inline error — replaces alert() */}
+                {otpError && (
+                  <p className="text-sm text-destructive text-center">{otpError}</p>
+                )}
+                {resendMessage && (
+                  <p className="text-sm text-green-600 text-center">{resendMessage}</p>
+                )}
 
                 <div className="text-center text-sm text-muted-foreground">
                   <Mail className="w-4 h-4 inline mr-1" />
@@ -329,31 +347,16 @@ const ForgotPassword = () => {
                 <span className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or
-                </span>
+                <span className="bg-background px-2 text-muted-foreground">Or</span>
               </div>
             </div>
 
             <p className="text-muted-foreground">
               Remember your password?{" "}
-              <Link
-                to="/login"
-                className="text-primary hover:underline font-semibold"
-              >
+              <Link to="/login" className="text-primary hover:underline font-semibold">
                 Sign in
               </Link>
             </p>
-          </motion.div>
-
-          {/* Back Button */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
-            className="pt-4"
-          >
-            
           </motion.div>
         </div>
       </motion.div>

@@ -5,36 +5,31 @@ export type AuthUser = {
   is_verified?: boolean;
 };
 
-type AuthPayload = {
-  access: string;
-  refresh?: string;
-  user: AuthUser;
-};
+// Keys must stay in sync with useAuthUser.ts
+const KEYS = {
+  access:  "accessToken",
+  refresh: "refreshToken",
+  user:    "user",
+} as const;
 
-const KEY = "gmap_auth";
-
-export function saveAuth(payload: AuthPayload) {
-  localStorage.setItem(KEY, JSON.stringify(payload));
-}
-
-export function getAuth(): AuthPayload | null {
-  const raw = localStorage.getItem(KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as AuthPayload;
-  } catch {
-    return null;
-  }
-}
-
-export function getUser(): AuthUser | null {
-  return getAuth()?.user ?? null;
+export function saveAuth(payload: { access: string; refresh?: string; user: AuthUser }) {
+  localStorage.setItem(KEYS.access, payload.access);
+  if (payload.refresh) localStorage.setItem(KEYS.refresh, payload.refresh);
+  localStorage.setItem(KEYS.user, JSON.stringify(payload.user));
 }
 
 export function getAccessToken(): string | null {
-  return getAuth()?.access ?? null;
+  return localStorage.getItem(KEYS.access);
+}
+
+export function getUser(): AuthUser | null {
+  const raw = localStorage.getItem(KEYS.user);
+  if (!raw) return null;
+  try { return JSON.parse(raw) as AuthUser; } catch { return null; }
 }
 
 export function logout() {
-  localStorage.removeItem(KEY);
+  localStorage.removeItem(KEYS.access);
+  localStorage.removeItem(KEYS.refresh);
+  localStorage.removeItem(KEYS.user);
 }

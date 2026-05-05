@@ -67,42 +67,38 @@ const SearchBar = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Location[]>([]);
-  const [popular, setPopular] = useState<Location[]>([]);
+  // Initialise immediately so popular is ready before the overlay first opens
+  const [popular, setPopular] = useState<Location[]>(() =>
+    pickPopularLocationsRandomDifferentCategories(campusLocations as Location[], 4),
+  );
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Generate 4 random popular locations from different categories
+  // Refresh popular suggestions each time the overlay opens; auto-focus input
   useEffect(() => {
+    if (!isExpanded) return;
     setPopular(pickPopularLocationsRandomDifferentCategories(campusLocations as Location[], 4));
-  }, []);
-
-  // Regenerate popular each time overlay opens (so it feels fresh)
-  useEffect(() => {
-    if (isExpanded) {
-      setPopular(pickPopularLocationsRandomDifferentCategories(campusLocations as Location[], 4));
-    }
+    inputRef.current?.focus();
   }, [isExpanded]);
 
-  useEffect(() => {
-    if (isExpanded && inputRef.current) inputRef.current.focus();
-  }, [isExpanded]);
-
-  // Update suggestions as user types
+  // Debounced search — avoids filtering on every keystroke
   useEffect(() => {
     const q = query.trim().toLowerCase();
-    if (q.length > 0) {
+    if (!q) { setSuggestions([]); return; }
+
+    const id = setTimeout(() => {
       const filtered = (campusLocations as Location[])
-        .filter((location) => {
-          const name = (location.name || "").toLowerCase();
-          const cat = (location.category || "").toLowerCase();
-          const desc = (location.description || "").toLowerCase();
+        .filter((loc) => {
+          const name = (loc.name || "").toLowerCase();
+          const cat  = (loc.category || "").toLowerCase();
+          const desc = (loc.description || "").toLowerCase();
           return name.includes(q) || cat.includes(q) || desc.includes(q);
         })
         .slice(0, 8);
       setSuggestions(filtered);
-    } else {
-      setSuggestions([]);
-    }
+    }, 150);
+
+    return () => clearTimeout(id);
   }, [query]);
 
   const handleSearch = (value: string) => {

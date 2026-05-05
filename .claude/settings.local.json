@@ -15,7 +15,18 @@
       "Bash(node -e ' *)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\-\\\\Documents\\\\G-Map\\\\src\" -Recurse -File -Include \"*.tsx\", \"*.ts\")",
       "Bash(Select-Object -ExpandProperty FullName)",
-      "Bash(not exist *)"
+      "Bash(not exist *)",
+      "Bash(git merge *)",
+      "Bash(git restore *)",
+      "Bash(git rm *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(npm run *)",
+      "Bash(npm ls *)",
+      "Bash(node -e \"require\\('tailwindcss'\\); console.log\\('tailwindcss OK'\\)\")",
+      "Bash(node -e \"require\\('autoprefixer'\\); console.log\\('autoprefixer OK'\\)\")",
+      "Bash(node -e \"const c = require\\('./postcss.config.js'\\); console.log\\('postcss config:', JSON.stringify\\(c\\)\\)\")",
+      "Bash(npx vite *)"
     ]
   }
 }

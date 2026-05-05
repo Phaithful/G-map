@@ -46,7 +46,7 @@ interface MapViewProps {
 // Helpers (Pins)
 // ------------------------
 const CATEGORY_ICONS: Record<string, typeof GraduationCap> = {
-    academics: GraduationCap,
+  academics: GraduationCap,
   offices:   Building2,
   hostels:   Home,
   food:      Utensils,
@@ -57,7 +57,7 @@ const CATEGORY_ICONS: Record<string, typeof GraduationCap> = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-    academics: "#3b82f6",
+  academics: "#3b82f6",
   offices:   "#64748b",
   hostels:   "#8b5cf6",
   food:      "#f97316",
@@ -65,7 +65,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   churches:  "#d97706",
   sports:    "#10b981",
   shops:     "#ec4899",
-  };
+};
 
 const getCategoryIcon  = (c: string) => CATEGORY_ICONS[c]  || GraduationCap;
 const getCategoryColor = (c: string) => CATEGORY_COLORS[c] || "#2563eb";

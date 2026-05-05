@@ -19,8 +19,7 @@ interface LoginFormData {
   password: string;
 }
 
-// ✅ Change this later when you deploy your backend
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -35,57 +34,49 @@ const Login = () => {
   });
 
   const onSubmit = async (data: LoginFormData) => {
+    const controller = new AbortController();
+    const timeoutId  = setTimeout(() => controller.abort(), 15_000);
+
     try {
       setIsLoading(true);
       form.clearErrors();
 
-      const payload = {
-        email: data.email.trim().toLowerCase(),
-        password: data.password,
-      };
-
       const res = await fetch(`${API_BASE}/api/auth/login/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          email:    data.email.trim().toLowerCase(),
+          password: data.password,
+        }),
+        signal: controller.signal,
       });
 
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        const msg =
-          json?.error ||
-          json?.detail ||
-          "Login failed. Please check your details and try again.";
-
-        form.setError("email", { message: msg });
-        return;
-      }
-
-      // ✅ expects backend returns { access, refresh, user }
-      if (!json?.access || !json?.user) {
         form.setError("email", {
-          message:
-            "Login response is missing user data. Check your backend login response.",
+          message: json?.error || json?.detail || "Login failed. Please check your details.",
         });
         return;
       }
 
-      // ✅ SAVE AUTH (this is what useAuthUser reads)
-      localStorage.setItem("accessToken", json.access);
-      localStorage.setItem("refreshToken", json.refresh);
-      localStorage.setItem("user", JSON.stringify(json.user));
+      if (!json?.access || !json?.user) {
+        form.setError("email", { message: "Unexpected server response. Please try again." });
+        return;
+      }
+
+      localStorage.setItem("accessToken",  json.access);
+      localStorage.setItem("refreshToken", json.refresh ?? "");
+      localStorage.setItem("user",         JSON.stringify(json.user));
       window.dispatchEvent(new Event("authChanged"));
       navigate("/");
-
-
-      // ✅ Redirect to home
-      navigate("/");
-    } catch {
-      form.setError("email", {
-        message: "Network error. Please check your connection and try again.",
-      });
+    } catch (err: any) {
+      const msg = err?.name === "AbortError"
+        ? "Request timed out. Please try again."
+        : "Network error. Please check your connection and try again.";
+      form.setError("email", { message: msg });
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
     }
   };

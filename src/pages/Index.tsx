@@ -86,13 +86,12 @@ const Index = () => {
 
   // ✅ Accurate route numbers
   const [routeInfo, setRouteInfo] = useState<{ distance: number; duration: number } | null>(null);
-  const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string;
 
-  async function fetchRouteInfo(args: {
+  const fetchRouteInfo = useCallback(async (args: {
     from: { lng: number; lat: number };
     to: { lng: number; lat: number };
     profile: "walking" | "driving" | "cycling";
-  }) {
+  }) => {
     const { from, to, profile } = args;
 
     // ── Tier 1: Campus graph ─────────────────────────────────────────
@@ -112,10 +111,11 @@ const Index = () => {
     }
 
     // ── Tier 2: Mapbox API ───────────────────────────────────────────
+    const token = import.meta.env.VITE_MAPBOX_TOKEN as string;
     const url =
       `https://api.mapbox.com/directions/v5/mapbox/${profile}/` +
       `${from.lng},${from.lat};${to.lng},${to.lat}` +
-      `?geometries=geojson&overview=simplified&steps=false&access_token=${MAPBOX_TOKEN}`;
+      `?geometries=geojson&overview=simplified&steps=false&access_token=${token}`;
 
     const res = await fetch(url);
     if (!res.ok) throw new Error("Failed to fetch route info");
@@ -124,7 +124,7 @@ const Index = () => {
     const r = data?.routes?.[0];
     if (!r) throw new Error("No route found");
     return { distance: r.distance as number, duration: r.duration as number };
-  }
+  }, []);
 
   if (!("geolocation" in navigator)) {
     return <div>Geolocation not supported on this device.</div>;

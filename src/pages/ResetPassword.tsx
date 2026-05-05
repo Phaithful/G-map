@@ -19,7 +19,7 @@ interface ResetPasswordFormData {
   confirmPassword: string;
 }
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -65,6 +65,9 @@ const ResetPassword = () => {
       return;
     }
 
+    const controller = new AbortController();
+    const timeoutId  = setTimeout(() => controller.abort(), 15_000);
+
     try {
       setIsLoading(true);
       form.clearErrors();
@@ -72,29 +75,25 @@ const ResetPassword = () => {
       const res = await fetch(`${API_BASE}/api/auth/reset-password/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          resetToken,
-          password: data.password,
-        }),
+        body: JSON.stringify({ resetToken, password: data.password }),
+        signal: controller.signal,
       });
 
       const json = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        form.setError("password", {
-          message: json?.error || "Failed to reset password.",
-        });
+        form.setError("password", { message: json?.error || "Failed to reset password." });
         return;
       }
 
       setIsSuccess(true);
-
-      setTimeout(() => {
-        navigate("/login");
-      }, 2000);
-    } catch {
-      form.setError("password", { message: "Network error. Try again." });
+      setTimeout(() => navigate("/login"), 2000);
+    } catch (err: any) {
+      form.setError("password", {
+        message: err?.name === "AbortError" ? "Request timed out. Try again." : "Network error. Try again.",
+      });
     } finally {
+      clearTimeout(timeoutId);
       setIsLoading(false);
     }
   };
