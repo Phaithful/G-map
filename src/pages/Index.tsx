@@ -17,7 +17,7 @@ import SavedLocationsPage from "../components/pages/SavedLocationsPage";
 import SettingsPage from "../components/pages/SettingsPage";
 import campusLocations from "../data/locations";
 import { useAuthUser } from "@/hooks/useAuthUser";
-import { buildCampusRouteGeoJSON, buildRouteSteps, estimateWalkSeconds } from "../lib/campusRouting";
+import { buildCampusRouteGeoJSON, buildRouteSteps, estimateWalkSeconds, haversineMeters } from "../lib/campusRouting";
 import type { RouteStep } from "../lib/campusRouting";
 import campusGraph from "../data/campusGraph.json";
 
@@ -323,12 +323,31 @@ const Index = () => {
 
   // ✅ "Get directions"
   const handleNavigate = useCallback(() => {
+    const pos = userLocationRef.current ?? userLocation;
+    if (pos && selectedLocation) {
+      const dist = haversineMeters(
+        { lng: pos.lng, lat: pos.lat },
+        { lng: selectedLocation.lng, lat: selectedLocation.lat },
+      );
+      if (dist <= 18) {
+        setShowLocationDetails(false);
+        setRouteInfo(null);
+        setNavProgress(null);
+        setArrivedLocation(selectedLocation);
+        setShowArrivalModal(true);
+        return;
+      }
+    }
     setShowLocationDetails(false);
     setIsNavOpen(true); // preview open
     setHasStartedNav(false); // not started yet
-  }, []);
+  }, [selectedLocation, userLocation]);
 
   const handleArrive = useCallback((destination: Location) => {
+    setIsNavOpen(false);
+    setHasStartedNav(false);
+    setRouteInfo(null);
+    setNavProgress(null);
     setArrivedLocation(destination);
     setShowArrivalModal(true);
   }, []);

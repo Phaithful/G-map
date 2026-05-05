@@ -693,6 +693,11 @@ const MapView = ({
             if (dist <= arrivalRadius) {
               arrivedRef.current = true;
 
+              // immediately wipe the blue line — don't wait for React useEffect
+              try { removeRoute(map); } catch {}
+              routeCoordsRef.current = [];
+              routeStepsRef.current = [];
+
               // vibrate if supported (quick feedback)
               try {
                 navigator.vibrate?.([120, 80, 120]);

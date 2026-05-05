@@ -12,7 +12,9 @@
       "Bash(node 'C:/Users/-/Documents/G-Map/scripts/mergeBuildings.cjs')",
       "PowerShell(Get-Item *)",
       "Bash(node scripts/buildCampusGraph.cjs)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\-\\\\Documents\\\\G-Map\\\\src\" -Recurse -File -Include \"*.tsx\", \"*.ts\")",
+      "Bash(Select-Object -ExpandProperty FullName)"
     ]
   }
 }
